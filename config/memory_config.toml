@@ -6,4 +6,5 @@ address = "0x01CF4064"
 originalSize = 2850
 newSize = 4096
 copyAfter = "0x0047D343"
+patch = "magic_patch.toml"
 description = "K_MAGIC data structure - expanded for custom spells"

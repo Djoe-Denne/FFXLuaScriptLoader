@@ -76,6 +76,9 @@ public:
                 std::fill_n(region.data.get() + config_.original_size, expanded_size, std::uint8_t{0});
             }
             
+            // Log content before moving the region
+            LOG_DEBUG("Copied content: {}", region.to_string(50, 100));
+            
             // Store in context
             LOG_DEBUG("Storing memory region '{}' in context", config_.key);
             context::ModContext::instance().store_memory_region(config_.key, std::move(region));

@@ -28,15 +28,23 @@ inline bool initialize_logging(const std::string& log_file_path, spdlog::level::
         file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [%s:%#] %v");
         console_sink->set_pattern("[%H:%M:%S.%e] [%^%l%$] %v");
         
+        // Set level for both sinks explicitly
+        file_sink->set_level(level);
+        console_sink->set_level(level);
+        
         // Create logger with both sinks
         auto logger = std::make_shared<spdlog::logger>("ff8_hook", spdlog::sinks_init_list{file_sink, console_sink});
         logger->set_level(level);
-        logger->flush_on(spdlog::level::info); // Auto-flush on info level and above
+        logger->flush_on(spdlog::level::debug); // Auto-flush on debug level and above
         
         // Set as default logger
         spdlog::set_default_logger(logger);
         
-        spdlog::info("FF8 Hook logging system initialized");
+        // Set global log level as well (just to be sure)
+        spdlog::set_level(level);
+        
+        spdlog::info("FF8 Hook logging system initialized with level: {}", spdlog::level::to_string_view(level));
+        spdlog::debug("Debug logging test - this should appear if debug level is active");
         return true;
         
     } catch (const std::exception&) {

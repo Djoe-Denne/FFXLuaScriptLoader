@@ -6,6 +6,8 @@
 #include <mutex>
 #include <span>
 #include <cstdint>
+#include <sstream>
+#include <iomanip>
 
 namespace ff8_hook::context {
 
@@ -37,6 +39,38 @@ struct MemoryRegion {
     /// @brief Get a const span view of the memory region
     [[nodiscard]] std::span<const std::uint8_t> span() const noexcept {
         return {data.get(), size};
+    }
+
+    /// @brief Get the memory region as a string
+    [[nodiscard]] std::string to_string() const noexcept {
+        std::stringstream ss;
+        ss << "MemoryRegion: " << description << " [0x" << std::hex << original_address << " - 0x" << std::hex << original_address + size << "]";
+        return ss.str();
+    }
+
+    /// @brief Get the memory content as a string
+    [[nodiscard]] std::string to_string(std::size_t offset, std::size_t count) const noexcept {
+        // Safety checks
+        if (!data || offset >= size) {
+            return "Invalid offset or null data";
+        }
+        
+        // Clamp count to available data
+        const std::size_t max_count = size - offset;
+        const std::size_t actual_count = (count > max_count) ? max_count : count;
+        
+        std::stringstream ss;
+        ss << std::hex << std::uppercase;
+        
+        for (std::size_t i = 0; i < actual_count; ++i) {
+            if (i > 0 && i % 16 == 0) {
+                ss << std::endl;
+            } else if (i > 0) {
+                ss << " ";
+            }
+            ss << "0x" << std::setfill('0') << std::setw(2) << static_cast<unsigned int>(data.get()[offset + i]);
+        }
+        return ss.str();
     }
 };
 
