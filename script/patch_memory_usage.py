@@ -4,12 +4,11 @@ Script de pré-patching d'instructions pour ff8_hook
 =====================================================
 
 Ce script prend un CSV (adresse, instruction) extrait d'IDA et génère un fichier TOML
-où les instructions sont pré-patchées pour permettre à ff8_hook de remplacer
-<memory_base> par une nouvelle base mémoire.
+avec les bytes d'instructions où les adresses sont marquées avec 'X' pour indiquer
+les bytes à patcher, accompagnés des offsets calculés.
 
-Le script désassemble les instructions à partir d'adresses CSV et remplace les 
-adresses absolues par des références relatives à une base mémoire, facilitant
-ainsi la relocation dynamique.
+Le script désassemble les instructions et identifie les bytes contenant des adresses
+mémoire qui doivent être relocalisées vers une nouvelle base mémoire.
 
 Usage: python patch_memory_usage.py --csv <file> --binary <file> [options]
 
@@ -18,8 +17,8 @@ Exemple:
 
 Sortie TOML:
     [instructions]
-    "0x0048D774" = "lea eax, [esi + <memory_base>+0x2A]"
-    "0x0048D8A4" = "lea edx, [eax + <memory_base>+0x2A]"
+    "0x0048D774" = {bytes = "8D 86 XX XX XX XX", offset = "0x2A"}
+    "0x0048D8A4" = {bytes = "8D 90 XX XX XX XX", offset = "0x2A"}
 """
 
 import csv
@@ -111,45 +110,70 @@ def parse_arguments():
     
     return parser.parse_args()
 
-def replace_addresses_with_offsets(op_str, memory_base, max_range):
+def find_memory_references_in_bytes(instruction_bytes, memory_base, max_range):
     """
-    Remplace les adresses hexadécimales dans op_str par leur offset relatif à memory_base
-    
-    Cette fonction est cruciale pour le pré-patching : elle transforme les adresses
-    absolues en références relatives que ff8_hook pourra ensuite relocater.
+    Trouve les références mémoire dans les bytes d'instruction et calcule les offsets à patcher
     
     Args:
-        op_str (str): Chaîne d'opérandes de l'instruction
+        instruction_bytes (bytes): Bytes bruts de l'instruction
         memory_base (int): Adresse de base mémoire de référence
         max_range (int): Plage maximale pour considérer un offset comme valide
         
     Returns:
-        str: Chaîne d'opérandes avec adresses remplacées par offsets
-        
-    Exemple:
-        "mov eax, [0x1CF4064]" -> "mov eax, [<memory_base>+0x0]"
+        list: Liste des offsets à patcher dans les bytes de l'instruction
     """
-    # Pattern pour trouver les adresses hexadécimales (0x suivi de chiffres hex)
-    hex_pattern = r'0x([0-9a-fA-F]+)'
+    patch_offsets = []
     
-    def replace_match(match):
-        addr_str = match.group(1)
-        try:
-            addr = int(addr_str, 16)
-            # Vérifier si l'adresse est dans la plage spécifiée autour de memory_base
-            if abs(addr - memory_base) <= max_range:
-                offset = addr - memory_base
-                if offset >= 0:
-                    return f"<memory_base>+0x{offset:X}"
-                else:
-                    return f"<memory_base>-0x{abs(offset):X}"
-            else:
-                # Garder l'adresse originale si elle n'est pas liée à memory_base
-                return match.group(0)
-        except ValueError:
-            return match.group(0)
+    # Chercher des adresses 32-bit dans les bytes (little endian)
+    for i in range(len(instruction_bytes) - 3):
+        # Extraire un dword (4 bytes) en little endian
+        addr_bytes = instruction_bytes[i:i+4]
+        addr = struct.unpack('<I', addr_bytes)[0]
+        
+        # Vérifier si cette adresse est dans la plage de memory_base
+        if abs(addr - memory_base) <= max_range:
+            offset_value = addr - memory_base
+            patch_offsets.append({
+                'byte_offset': i,
+                'memory_offset': offset_value,
+                'original_addr': addr
+            })
     
-    return re.sub(hex_pattern, replace_match, op_str)
+    return patch_offsets
+
+def create_patched_bytes_string(instruction_bytes, patch_offsets):
+    """
+    Crée une chaîne de bytes avec des 'X' pour marquer les bytes à patcher
+    
+    Args:
+        instruction_bytes (bytes): Bytes originaux de l'instruction
+        patch_offsets (list): Liste des offsets à patcher
+        
+    Returns:
+        str: Chaîne hexadécimale avec 'X' pour les bytes à patcher
+    """
+    # Convertir les bytes en liste modifiable
+    hex_chars = []
+    for b in instruction_bytes:
+        hex_chars.extend([f"{b:02X}"[0], f"{b:02X}"[1]])
+    
+    # Marquer les bytes à patcher avec 'X'
+    for patch in patch_offsets:
+        start_idx = patch['byte_offset'] * 2
+        # Marquer 4 bytes (8 caractères hex) avec des X
+        for j in range(8):
+            if start_idx + j < len(hex_chars):
+                hex_chars[start_idx + j] = 'X'
+    
+    # Regrouper par bytes (2 caractères)
+    result = []
+    for i in range(0, len(hex_chars), 2):
+        if i + 1 < len(hex_chars):
+            result.append(hex_chars[i] + hex_chars[i + 1])
+        else:
+            result.append(hex_chars[i] + '0')
+    
+    return ' '.join(result)
 
 def load_binary(binary_file, logger):
     """Charge le fichier binaire"""
@@ -262,18 +286,30 @@ def main():
                 continue
             
             insn = insns[0]
-            # Remplacer les adresses par les offsets dans op_str (pré-patching)
-            modified_op_str = replace_addresses_with_offsets(
-                insn.op_str, args.memory_base, args.max_offset_range
+            
+            # Obtenir les bytes de l'instruction (longueur réelle)
+            instruction_bytes = code[:insn.size]
+            
+            # Trouver les références mémoire à patcher
+            patch_offsets = find_memory_references_in_bytes(
+                instruction_bytes, args.memory_base, args.max_offset_range
             )
+            
+            # Créer la chaîne de bytes avec les marqueurs X
+            patched_bytes = create_patched_bytes_string(instruction_bytes, patch_offsets)
+            
+            # Calculer l'offset principal (premier trouvé ou 0)
+            main_offset = patch_offsets[0]['memory_offset'] if patch_offsets else 0
             
             # Ajouter au dictionnaire des instructions
             addr_key = f"0x{insn.address:08X}"
-            instruction = f"{insn.mnemonic} {modified_op_str}"
-            instructions[addr_key] = instruction
+            instructions[addr_key] = {
+                "bytes": patched_bytes,
+                "offset": f"0x{main_offset:X}" if main_offset >= 0 else f"-0x{abs(main_offset):X}"
+            }
             
             successful_disassemblies += 1
-            logger.debug(f"Pré-patching réussi: {addr_key} {instruction}")
+            logger.debug(f"Pré-patching réussi: {addr_key} bytes={patched_bytes} offset={instructions[addr_key]['offset']}")
         
         except Exception as e:
             failed_disassemblies += 1
