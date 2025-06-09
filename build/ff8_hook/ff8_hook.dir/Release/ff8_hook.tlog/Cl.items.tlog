@@ -1,5 +1,0 @@
-C:\Users\djden\source\repos\FFScriptLoader\ff8_hook\src\dllmain.cpp;C:\Users\djden\source\repos\FFScriptLoader\build\ff8_hook\ff8_hook.dir\Release\dllmain.obj
-C:\Users\djden\source\repos\FFScriptLoader\ff8_hook\src\context\mod_context.cpp;C:\Users\djden\source\repos\FFScriptLoader\build\ff8_hook\ff8_hook.dir\Release\mod_context.obj
-C:\Users\djden\source\repos\FFScriptLoader\ff8_hook\src\memory\copy_memory.cpp;C:\Users\djden\source\repos\FFScriptLoader\build\ff8_hook\ff8_hook.dir\Release\copy_memory.obj
-C:\Users\djden\source\repos\FFScriptLoader\ff8_hook\src\config\config_loader.cpp;C:\Users\djden\source\repos\FFScriptLoader\build\ff8_hook\ff8_hook.dir\Release\config_loader.obj
-C:\Users\djden\source\repos\FFScriptLoader\ff8_hook\src\hook\hook_manager.cpp;C:\Users\djden\source\repos\FFScriptLoader\build\ff8_hook\ff8_hook.dir\Release\hook_manager.obj

@@ -1,7 +1,0 @@
-# CMake generation dependency list for this directory.
-C:/Users/djden/source/repos/FFScriptLoader/minhook-test/CMakeLists.txt
-C:/Users/djden/source/tools/vcpkg-2025.02.14/installed/x86-windows/share/minhook/minhook-config-version.cmake
-C:/Users/djden/source/tools/vcpkg-2025.02.14/installed/x86-windows/share/minhook/minhook-config.cmake
-C:/Users/djden/source/tools/vcpkg-2025.02.14/installed/x86-windows/share/minhook/minhook-targets-debug.cmake
-C:/Users/djden/source/tools/vcpkg-2025.02.14/installed/x86-windows/share/minhook/minhook-targets-release.cmake
-C:/Users/djden/source/tools/vcpkg-2025.02.14/installed/x86-windows/share/minhook/minhook-targets.cmake
