@@ -1,0 +1,10 @@
+^C:\USERS\DJDEN\SOURCE\REPOS\FFSCRIPTLOADER\BUILD\_DEPS\SPDLOG-SUBBUILD\CMAKEFILES\11166558A653C3BCE65DDC491D5DD45E\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild -BC:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/spdlog-populate.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

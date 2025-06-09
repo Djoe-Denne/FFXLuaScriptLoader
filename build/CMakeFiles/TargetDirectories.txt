@@ -1,0 +1,14 @@
+C:/Users/djden/source/repos/FFScriptLoader/build/CMakeFiles/INSTALL.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/ff8_hook/CMakeFiles/ff8_hook.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/ff8_hook/CMakeFiles/INSTALL.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/ff8_hook/CMakeFiles/ALL_BUILD.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/_deps/minhook-build/CMakeFiles/minhook.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/_deps/minhook-build/CMakeFiles/INSTALL.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/_deps/minhook-build/CMakeFiles/ALL_BUILD.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-build/CMakeFiles/spdlog.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-build/CMakeFiles/INSTALL.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-build/CMakeFiles/ALL_BUILD.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/injector/CMakeFiles/ff8_injector.dir
+C:/Users/djden/source/repos/FFScriptLoader/build/injector/CMakeFiles/INSTALL.dir

@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/spdlog-populate"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/11166558a653c3bce65ddc491d5dd45e/spdlog-populate.rule"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/3883fbcc625e315752fd1134c43a8740/spdlog-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/34a01e3260dbeba1f504de8b917c37ca/spdlog-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/34a01e3260dbeba1f504de8b917c37ca/spdlog-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/34a01e3260dbeba1f504de8b917c37ca/spdlog-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/34a01e3260dbeba1f504de8b917c37ca/spdlog-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/34a01e3260dbeba1f504de8b917c37ca/spdlog-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/34a01e3260dbeba1f504de8b917c37ca/spdlog-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/34a01e3260dbeba1f504de8b917c37ca/spdlog-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/djden/source/repos/FFScriptLoader/build/_deps/spdlog-subbuild/CMakeFiles/34a01e3260dbeba1f504de8b917c37ca/spdlog-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"spdlog-populate"
+		],
+		"name" : "spdlog-populate"
+	}
+}

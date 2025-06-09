@@ -1,0 +1,84 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach to FF8 (Auto)",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processName": "ff8_en.exe",
+            "symbolSearchPath": "${workspaceFolder}/build/Debug;${workspaceFolder}/build/Release",
+            "sourceFileMap": {
+                "/": "${workspaceFolder}/"
+            },
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false
+            }
+        },
+        {
+            "name": "Attach to Process (Manual)",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processId": "${command:pickProcess}",
+            "symbolSearchPath": "${workspaceFolder}/build/Debug;${workspaceFolder}/build/Release",
+            "sourceFileMap": {
+                "/": "${workspaceFolder}/"
+            },
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false
+            }
+        },
+        {
+            "name": "Debug FF8 Injector",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/ff8_injector.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/Debug",
+            "environment": [],
+            "console": "externalTerminal",
+            "symbolSearchPath": "${workspaceFolder}/build/Debug",
+            "sourceFileMap": {
+                "/": "${workspaceFolder}/"
+            }
+        },
+        {
+            "name": "Debug FF8 Injector (Release)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Release/ff8_injector.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/Release",
+            "environment": [],
+            "console": "externalTerminal",
+            "symbolSearchPath": "${workspaceFolder}/build/Release",
+            "sourceFileMap": {
+                "/": "${workspaceFolder}/"
+            }
+        },
+        {
+            "name": "Wait for FF8 and Attach",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processName": "ff8_en.exe",
+            "symbolSearchPath": "${workspaceFolder}/build/Debug;${workspaceFolder}/build/Release",
+            "sourceFileMap": {
+                "/": "${workspaceFolder}/"
+            },
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false
+            },
+            "preLaunchTask": "wait-for-ff8"
+        }
+    ]
+} 

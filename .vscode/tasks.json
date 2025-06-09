@@ -1,0 +1,106 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "build",
+                "--config",
+                "Debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$msCompile"],
+            "detail": "Build the project in Debug configuration"
+        },
+        {
+            "label": "build-release",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "build",
+                "--config",
+                "Release"
+            ],
+            "group": "build",
+            "problemMatcher": ["$msCompile"],
+            "detail": "Build the project in Release configuration"
+        },
+        {
+            "label": "configure-cmake",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-B",
+                "build",
+                "-S",
+                "."
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Configure CMake build system"
+        },
+        {
+            "label": "wait-for-ff8",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "Write-Host 'Waiting for ff8_en.exe process...'; do { Start-Sleep -Seconds 1; $process = Get-Process -Name 'ff8_en' -ErrorAction SilentlyContinue } while ($process -eq $null); Write-Host 'FF8 process found! PID:' $process.Id"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "detail": "Wait for FF8 process to start before attaching debugger"
+        },
+        {
+            "label": "run-injector-debug",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/Debug/ff8_injector.exe",
+            "args": [],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/build/Debug"
+            },
+            "problemMatcher": [],
+            "detail": "Run the FF8 injector (Debug build)"
+        },
+        {
+            "label": "run-injector-release",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/Release/ff8_injector.exe",
+            "args": [],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/build/Release"
+            },
+            "problemMatcher": [],
+            "detail": "Run the FF8 injector (Release build)"
+        }
+    ]
+} 

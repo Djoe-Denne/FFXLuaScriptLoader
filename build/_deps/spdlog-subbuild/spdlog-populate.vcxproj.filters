@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\34a01e3260dbeba1f504de8b917c37ca\spdlog-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\34a01e3260dbeba1f504de8b917c37ca\spdlog-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\34a01e3260dbeba1f504de8b917c37ca\spdlog-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\34a01e3260dbeba1f504de8b917c37ca\spdlog-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\34a01e3260dbeba1f504de8b917c37ca\spdlog-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\34a01e3260dbeba1f504de8b917c37ca\spdlog-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\34a01e3260dbeba1f504de8b917c37ca\spdlog-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\34a01e3260dbeba1f504de8b917c37ca\spdlog-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\3883fbcc625e315752fd1134c43a8740\spdlog-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\11166558a653c3bce65ddc491d5dd45e\spdlog-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\djden\source\repos\FFScriptLoader\build\_deps\spdlog-subbuild\CMakeFiles\spdlog-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{86943CEA-2E23-34F7-BB73-CE664E31E9D5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

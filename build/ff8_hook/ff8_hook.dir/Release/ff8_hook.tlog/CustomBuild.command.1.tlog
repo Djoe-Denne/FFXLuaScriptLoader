@@ -1,0 +1,10 @@
+^C:\USERS\DJDEN\SOURCE\REPOS\FFSCRIPTLOADER\FF8_HOOK\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/djden/source/repos/FFScriptLoader -BC:/Users/djden/source/repos/FFScriptLoader/build --check-stamp-file C:/Users/djden/source/repos/FFScriptLoader/build/ff8_hook/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

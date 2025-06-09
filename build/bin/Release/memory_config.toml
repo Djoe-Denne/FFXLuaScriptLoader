@@ -1,0 +1,9 @@
+# FF8 Script Loader - Memory Region Configuration
+# Define memory regions to monitor for writes and automatically expand
+
+[memory.K_MAGIC]
+address = "0x01CF4064"
+originalSize = 2850
+newSize = 4096
+copyAfter = "0x47D2A0"
+description = "K_MAGIC data structure - Main game data"
