@@ -108,6 +108,11 @@ def parse_arguments():
         help="Plage maximale pour considérer un offset comme lié à memory_base (défaut: 0x10000)"
     )
     
+    parser.add_argument(
+        "--output",
+        help="Fichier de sortie TOML (défaut: stdout)"
+    )
+    
     return parser.parse_args()
 
 def find_memory_references_in_bytes(instruction_bytes, memory_base, max_range):
@@ -336,8 +341,22 @@ def main():
         "instructions": instructions
     }
     
-    # Sortie TOML vers stdout
-    print(toml.dumps(result))
+    # Sortie TOML
+    toml_content = toml.dumps(result)
+    
+    if args.output:
+        # Écrire dans un fichier avec encodage UTF-8 explicite
+        logger.info(f"Écriture du fichier TOML: {args.output}")
+        try:
+            with open(args.output, 'w', encoding='utf-8') as f:
+                f.write(toml_content)
+            logger.info(f"Fichier TOML créé avec succès: {args.output}")
+        except Exception as e:
+            logger.error(f"Erreur lors de l'écriture du fichier TOML: {e}")
+            sys.exit(1)
+    else:
+        # Sortie vers stdout
+        print(toml_content)
 
 if __name__ == "__main__":
     main() 

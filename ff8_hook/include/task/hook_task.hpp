@@ -15,6 +15,8 @@ enum class TaskError {
     memory_allocation_failed,
     invalid_address,
     copy_failed,
+    dependency_not_met,
+    patch_failed,
     unknown_error
 };
 

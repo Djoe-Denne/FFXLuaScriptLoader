@@ -3,30 +3,14 @@
 #include "../task/hook_task.hpp"
 #include "../context/mod_context.hpp"
 #include "../util/logger.hpp"
+#include "../config/memory_config.hpp"
 #include <string>
 #include <cstdint>
 
 namespace ff8_hook::memory {
 
-/// @brief Configuration for memory copy operations
-struct CopyMemoryConfig {
-    std::string key;                    ///< Memory region key (e.g., "memory.K_MAGIC")
-    std::uintptr_t address;            ///< Source address to copy from
-    std::size_t original_size;         ///< Original size of the memory region
-    std::size_t new_size;              ///< New size for the expanded memory region
-    std::uintptr_t copy_after;         ///< Address where hook should be installed
-    std::string description;           ///< Description of the memory region
-    
-    /// @brief Validate the configuration
-    /// @return true if configuration is valid
-    [[nodiscard]] bool is_valid() const noexcept {
-        return !key.empty() && 
-               address != 0 && 
-               original_size > 0 && 
-               new_size >= original_size &&
-               copy_after != 0;
-    }
-};
+// Use the config structure from the config namespace
+using CopyMemoryConfig = config::CopyMemoryConfig;
 
 /// @brief Task that copies memory from one location to an expanded buffer
 class CopyMemoryTask final : public task::IHookTask {

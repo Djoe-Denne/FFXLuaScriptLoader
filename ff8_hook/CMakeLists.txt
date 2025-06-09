@@ -42,10 +42,17 @@ FetchContent_Declare(
   GIT_TAG v1.12.0
 )
 
+# Download toml++
+FetchContent_Declare(
+  tomlplusplus
+  GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+  GIT_TAG v3.4.0
+)
+
 # Configure MinHook build options
 set(MINHOOK_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
-FetchContent_MakeAvailable(minhook spdlog)
+FetchContent_MakeAvailable(minhook spdlog tomlplusplus)
 
 # Source files
 set(SOURCES 
@@ -70,10 +77,11 @@ target_include_directories(ff8_hook PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link MinHook
+# Link libraries
 target_link_libraries(ff8_hook PRIVATE 
     minhook
     spdlog::spdlog
+    tomlplusplus::tomlplusplus
     kernel32
     user32
 )

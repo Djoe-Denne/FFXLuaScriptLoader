@@ -3,6 +3,7 @@
 #include "hook_manager.hpp"
 #include "../config/config_loader.hpp"
 #include "../memory/copy_memory.hpp"
+#include "../memory/patch_memory.hpp"
 #include "../util/logger.hpp"
 #include <string>
 #include <expected>
@@ -54,7 +55,7 @@ public:
         LOG_INFO("Loaded {} configuration(s) from file", configs.size());
         
         // Group configurations by copyAfter address
-        std::unordered_map<std::uintptr_t, std::vector<memory::CopyMemoryConfig>> hooks_by_address;
+        std::unordered_map<std::uintptr_t, std::vector<config::CopyMemoryConfig>> hooks_by_address;
         
         for (const auto& config : configs) {
             LOG_DEBUG("Processing config: key='{}', address=0x{:X}, copyAfter=0x{:X}, originalSize={}, newSize={}", 
@@ -112,7 +113,7 @@ public:
         LOG_INFO("Loaded {} configuration(s) from file", configs.size());
         
         // Group configurations by copyAfter address
-        std::unordered_map<std::uintptr_t, std::vector<memory::CopyMemoryConfig>> hooks_by_address;
+        std::unordered_map<std::uintptr_t, std::vector<config::CopyMemoryConfig>> hooks_by_address;
         
         for (const auto& config : configs) {
             if (auto address = extract_copy_after(config)) {
@@ -149,24 +150,63 @@ private:
     /// @return Result of operation
     [[nodiscard]] static FactoryResult create_hook_for_address(
         std::uintptr_t address,
-        const std::vector<memory::CopyMemoryConfig>& configs,
+        const std::vector<config::CopyMemoryConfig>& configs,
         HookManager& manager) {
         
-        LOG_DEBUG("Creating {} task(s) for hook at address 0x{:X}", configs.size(), address);
+        LOG_DEBUG("Creating tasks for hook at address 0x{:X} with {} config(s)", address, configs.size());
         
         for (const auto& config : configs) {
+            LOG_DEBUG("Processing config '{}' - has patch: {}", config.key, config.has_patch());
+            
+            // Always create copy memory task first
             LOG_DEBUG("Creating CopyMemoryTask for config '{}'", config.key);
+            auto copy_task = task::make_task<memory::CopyMemoryTask>(config);
             
-            // Create copy memory task
-            auto task = task::make_task<memory::CopyMemoryTask>(config);
-            
-            // Add task to hook at the specified address
-            if (auto result = manager.add_task_to_hook(address, std::move(task)); !result) {
-                LOG_ERROR("Failed to add task '{}' to hook at address 0x{:X}", config.key, address);
+            if (auto result = manager.add_task_to_hook(address, std::move(copy_task)); !result) {
+                LOG_ERROR("Failed to add CopyMemoryTask '{}' to hook at address 0x{:X}", config.key, address);
                 return std::unexpected(FactoryError::hook_creation_failed);
             }
             
-            LOG_DEBUG("Successfully added task '{}' to hook at address 0x{:X}", config.key, address);
+            LOG_DEBUG("Successfully added CopyMemoryTask '{}' to hook at address 0x{:X}", config.key, address);
+            
+            // If config has a patch file, create patch memory task as well
+            if (config.has_patch()) {
+                LOG_DEBUG("Creating PatchMemoryTask for config '{}' with patch file '{}'", 
+                         config.key, *config.patch);
+                
+                // Load patch instructions from file
+                auto patch_result = config::ConfigLoader::load_patch_instructions(*config.patch);
+                if (!patch_result) {
+                    LOG_ERROR("Failed to load patch instructions from file '{}' for config '{}'", 
+                             *config.patch, config.key);
+                    return std::unexpected(FactoryError::config_load_failed);
+                }
+                
+                const auto& patches = *patch_result;
+                LOG_INFO("Loaded {} patch instruction(s) from '{}' for config '{}'", 
+                        patches.size(), *config.patch, config.key);
+                
+                // Create patch config from copy config
+                config::PatchMemoryConfig patch_config;
+                patch_config.key = config.key;
+                patch_config.address = config.address;
+                patch_config.copy_after = config.copy_after;
+                patch_config.description = config.description;
+                patch_config.patch = config.patch;
+                patch_config.patch_file_path = *config.patch;
+                
+                auto patch_task = task::make_task<memory::PatchMemoryTask>(
+                    std::move(patch_config), 
+                    std::move(patches)
+                );
+                
+                if (auto result = manager.add_task_to_hook(address, std::move(patch_task)); !result) {
+                    LOG_ERROR("Failed to add PatchMemoryTask '{}' to hook at address 0x{:X}", config.key, address);
+                    return std::unexpected(FactoryError::hook_creation_failed);
+                }
+                
+                LOG_DEBUG("Successfully added PatchMemoryTask '{}' to hook at address 0x{:X}", config.key, address);
+            }
         }
         
         return {};
