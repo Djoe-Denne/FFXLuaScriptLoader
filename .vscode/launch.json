@@ -79,6 +79,85 @@
                 "trace": false
             },
             "preLaunchTask": "wait-for-ff8"
+        },
+        {
+            "name": "Debug FF8 Hook (x32)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/ff8_hook.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "CMake: Build Debug (x32)",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "visualizerFile": "${workspaceFolder}/.vscode/natvis.xml"
+        },
+        {
+            "name": "Debug FF8 Hook Library (x32)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "C:/Program Files (x86)/Steam/steamapps/common/FINAL FANTASY VIII/FF8_EN.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "C:/Program Files (x86)/Steam/steamapps/common/FINAL FANTASY VIII/",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "${workspaceFolder}/build/Debug;${env:PATH}"
+                }
+            ],
+            "console": "externalTerminal",
+            "preLaunchTask": "CMake: Build Debug (x32)",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "symbolSearchPath": "${workspaceFolder}/build/Debug",
+            "requireExactSource": false
+        },
+        {
+            "name": "Attach to Process (x32)",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processId": "${command:pickProcess}",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "symbolSearchPath": "${workspaceFolder}/build/Debug"
+        },
+        {
+            "name": "Release FF8 Hook (x32)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Release/ff8_hook.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "CMake: Build Release (x32)",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 } 

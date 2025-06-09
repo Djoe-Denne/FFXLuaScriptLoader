@@ -2,49 +2,133 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build-debug",
+            "label": "CMake: Configure (x32)",
             "type": "shell",
             "command": "cmake",
             "args": [
-                "--build",
-                "build",
-                "--config",
-                "Debug"
+                "-S", "${workspaceFolder}",
+                "-B", "${workspaceFolder}/build",
+                "-G", "Visual Studio 17 2022",
+                "-A", "Win32"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Build Debug (x32)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "${workspaceFolder}/build",
+                "--config", "Debug"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": ["$msCompile"],
-            "detail": "Build the project in Debug configuration"
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "dependsOn": "CMake: Configure (x32)"
         },
         {
-            "label": "build-release",
+            "label": "CMake: Build Release (x32)",
             "type": "shell",
             "command": "cmake",
             "args": [
-                "--build",
-                "build",
-                "--config",
-                "Release"
+                "--build", "${workspaceFolder}/build",
+                "--config", "Release"
             ],
             "group": "build",
-            "problemMatcher": ["$msCompile"],
-            "detail": "Build the project in Release configuration"
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "dependsOn": "CMake: Configure (x32)"
         },
         {
-            "label": "configure-cmake",
+            "label": "CMake: Clean",
             "type": "shell",
             "command": "cmake",
             "args": [
-                "-B",
-                "build",
-                "-S",
-                "."
+                "--build", "${workspaceFolder}/build",
+                "--target", "clean"
             ],
             "group": "build",
-            "problemMatcher": [],
-            "detail": "Configure CMake build system"
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Rebuild (x32)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "${workspaceFolder}/build",
+                "--config", "Debug",
+                "--clean-first"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "dependsOn": "CMake: Configure (x32)"
+        },
+        {
+            "label": "CMake: Install",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--install", "${workspaceFolder}/build",
+                "--config", "Debug"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
         },
         {
             "label": "wait-for-ff8",

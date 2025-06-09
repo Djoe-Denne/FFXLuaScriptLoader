@@ -1,5 +1,51 @@
 {
+    "cmake.configureOnOpen": true,
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.generator": "Visual Studio 17 2022",
+    "cmake.platform": "Win32",
+    "cmake.buildArgs": [
+        "--config", "Debug"
+    ],
+    "cmake.debugConfig": {
+        "name": "Debug x32",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${command:cmake.launchTargetPath}",
+        "args": [],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}",
+        "environment": [],
+        "console": "externalTerminal"
+    },
+    "cmake.defaultVariants": {
+        "buildType": {
+            "default": "debug",
+            "choices": {
+                "debug": {
+                    "short": "Debug",
+                    "long": "Emit debug information without optimization",
+                    "buildType": "Debug"
+                },
+                "release": {
+                    "short": "Release",
+                    "long": "Enable optimizations, omit debug info",
+                    "buildType": "Release"
+                },
+                "relwithdebinfo": {
+                    "short": "RelWithDebInfo",
+                    "long": "Enable optimizations, do emit debug info",
+                    "buildType": "RelWithDebInfo"
+                }
+            }
+        }
+    },
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "C_Cpp.default.intelliSenseMode": "windows-msvc-x86",
+    "C_Cpp.default.compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.*/bin/Hostx64/x86/cl.exe",
     "files.associations": {
+        "*.hpp": "cpp",
+        "*.cpp": "cpp",
+        "*.h": "c",
         "algorithm": "cpp",
         "array": "cpp",
         "atomic": "cpp",

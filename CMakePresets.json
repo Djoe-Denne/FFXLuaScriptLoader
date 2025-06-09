@@ -1,0 +1,86 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "default-x32",
+            "displayName": "Default x32 Config",
+            "description": "Default build using Visual Studio generator for x32",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "Win32",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_GENERATOR_PLATFORM": "Win32"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [ "Windows" ]
+                }
+            }
+        },
+        {
+            "name": "debug-x32",
+            "displayName": "Debug x32",
+            "description": "Debug build for x32 architecture",
+            "inherits": "default-x32",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release-x32",
+            "displayName": "Release x32",
+            "description": "Release build for x32 architecture",
+            "inherits": "default-x32",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "relwithdebinfo-x32",
+            "displayName": "RelWithDebInfo x32",
+            "description": "Release with debug info for x32 architecture",
+            "inherits": "default-x32",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default-x32",
+            "displayName": "Default x32 Build",
+            "configurePreset": "default-x32",
+            "configuration": "Debug"
+        },
+        {
+            "name": "debug-x32",
+            "displayName": "Debug x32 Build",
+            "configurePreset": "debug-x32",
+            "configuration": "Debug"
+        },
+        {
+            "name": "release-x32",
+            "displayName": "Release x32 Build",
+            "configurePreset": "release-x32",
+            "configuration": "Release"
+        },
+        {
+            "name": "relwithdebinfo-x32",
+            "displayName": "RelWithDebInfo x32 Build",
+            "configurePreset": "relwithdebinfo-x32",
+            "configuration": "RelWithDebInfo"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "default-x32",
+            "displayName": "Default x32 Test",
+            "configurePreset": "default-x32",
+            "configuration": "Debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        }
+    ]
+} 
