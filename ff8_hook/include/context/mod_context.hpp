@@ -18,7 +18,7 @@ struct MemoryRegion {
     std::uintptr_t original_address;
     std::string description;
     
-    MemoryRegion() = default;
+    MemoryRegion() : data(nullptr), size(0), original_address(0), description() {}
     MemoryRegion(std::size_t sz, std::uintptr_t addr, std::string desc)
         : data(std::make_unique<std::uint8_t[]>(sz))
         , size(sz)

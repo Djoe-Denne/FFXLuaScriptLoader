@@ -16,8 +16,14 @@ if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif()
 
 # Global C++ standard
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Enable testing
+option(BUILD_TESTING "Build tests" ON)
+if(BUILD_TESTING)
+    enable_testing()
+endif()
 
 # Output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -42,6 +48,11 @@ message(STATUS "Building FFScriptLoader components as x32 (32-bit)")
 # Add subdirectories
 add_subdirectory(ff8_hook)
 add_subdirectory(injector)
+
+# Add tests if enabled
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
 
 # Optional: Create install target
 install(TARGETS ff8_hook ff8_injector
