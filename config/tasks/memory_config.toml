@@ -3,8 +3,8 @@
 
 [memory.K_MAGIC]
 address = "0x01CF4064"
-originalSize = 2850
+originalSize = 3420
 newSize = 4096
 copyAfter = "0x0047D343"
-patch = "C:/Users/djden/source/repos/FFScriptLoader/config/magic_patch.toml"
+patch = "config/tasks/magic_patch.toml"
 description = "K_MAGIC data structure - expanded for custom spells"

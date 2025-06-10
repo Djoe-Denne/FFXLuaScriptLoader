@@ -26,10 +26,10 @@ void InstallHooks() {
     LOG_INFO("Initializing hook system...");
     
     // Load configuration and create hooks
-    const std::string config_path = "C:/Users/djden/source/repos/FFScriptLoader/config/memory_config.toml";
-    LOG_INFO("Loading configuration from: {}", config_path);
+    const std::string tasks_config_path = "config/tasks.toml";
+    LOG_INFO("Loading tasks configuration from: {}", tasks_config_path);
     
-    if (auto result = ff8_hook::hook::HookFactory::create_hooks_from_config(config_path, g_hook_manager); !result) {
+    if (auto result = ff8_hook::hook::HookFactory::create_hooks_from_tasks(tasks_config_path, g_hook_manager); !result) {
         LOG_ERROR("Failed to create hooks from configuration");
         MessageBoxA(NULL, "Failed to create hooks from configuration\nCheck logs/ff8_hook.log for details", "Config Error", MB_OK);
         return;

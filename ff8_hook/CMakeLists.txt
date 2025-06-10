@@ -60,6 +60,7 @@ set(SOURCES
     src/context/mod_context.cpp
     src/memory/copy_memory.cpp
     src/config/config_loader.cpp
+    src/config/task_loader.cpp
     src/hook/hook_manager.cpp
 )
 

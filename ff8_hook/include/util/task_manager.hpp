@@ -23,7 +23,27 @@ public:
     TaskManager(TaskManager&&) = default;
     TaskManager& operator=(TaskManager&&) = default;
     
-    /// @brief Load tasks from configuration file
+    /// @brief Load tasks from tasks configuration file
+    /// @param tasks_config_path Path to the tasks.toml configuration file
+    /// @return true if loading succeeded
+    [[nodiscard]] bool load_from_tasks_config(const std::string& tasks_config_path) {
+        auto config_result = config::ConfigLoader::load_memory_configs_from_tasks(tasks_config_path);
+        if (!config_result) {
+            return false;
+        }
+        
+        // Clear existing tasks
+        tasks_.clear();
+        
+        // Create copy memory tasks from configuration
+        for (auto&& config : *config_result) {
+            tasks_.push_back(task::make_task<memory::CopyMemoryTask>(std::move(config)));
+        }
+        
+        return true;
+    }
+
+    /// @brief Load tasks from configuration file (legacy method)
     /// @param config_path Path to the configuration file
     /// @return true if loading succeeded
     [[nodiscard]] bool load_from_config(const std::string& config_path) {

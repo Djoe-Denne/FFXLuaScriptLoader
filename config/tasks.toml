@@ -1,0 +1,20 @@
+# FFScriptLoader Tasks Configuration
+# This file defines all available tasks and their configuration files
+
+[metadata]
+version = "1.0.0"
+description = "Main configuration file that references all task configurations"
+
+# Memory expansion tasks
+[tasks.memory_expansion]
+name = "Memory Expansion"
+description = "Tasks that expand memory regions for FF8 modding"
+config_file = "config/tasks/memory_config.toml"
+enabled = true
+
+# Patch tasks  
+[tasks.magic_patches]
+name = "Magic System Patches"
+description = "Pre-patched instructions for magic system modifications"
+config_file = "config/tasks/magic_patch.toml"
+enabled = true 

@@ -34,6 +34,61 @@ public:
     HookFactory(HookFactory&&) = default;
     HookFactory& operator=(HookFactory&&) = default;
     
+    /// @brief Create hooks from tasks configuration file and add them to the manager
+    /// @param tasks_config_path Path to tasks.toml configuration file
+    /// @param manager Hook manager to add hooks to
+    /// @return Result of operation
+    [[nodiscard]] static FactoryResult create_hooks_from_tasks(
+        const std::string& tasks_config_path,
+        HookManager& manager) {
+        
+        LOG_DEBUG("Starting hook creation from tasks config: {}", tasks_config_path);
+        
+        // Load memory configurations from all tasks
+        auto config_result = config::ConfigLoader::load_memory_configs_from_tasks(tasks_config_path);
+        if (!config_result) {
+            LOG_ERROR("Failed to load configurations from tasks file: {}", tasks_config_path);
+            return std::unexpected(FactoryError::config_load_failed);
+        }
+        
+        const auto& configs = *config_result;
+        LOG_INFO("Loaded {} configuration(s) from tasks file", configs.size());
+        
+        // Group configurations by copyAfter address
+        std::unordered_map<std::uintptr_t, std::vector<config::CopyMemoryConfig>> hooks_by_address;
+        
+        for (const auto& config : configs) {
+            LOG_DEBUG("Processing config: key='{}', address=0x{:X}, copyAfter=0x{:X}, originalSize={}, newSize={}", 
+                     config.key, config.address, config.copy_after, config.original_size, config.new_size);
+            
+            if (!config.is_valid()) {
+                LOG_WARNING("Invalid configuration for key '{}' - skipping", config.key);
+                continue;
+            }
+            
+            // Use the copyAfter field from configuration
+            hooks_by_address[config.copy_after].push_back(config);
+            LOG_DEBUG("Added config '{}' to hook address 0x{:X}", config.key, config.copy_after);
+        }
+        
+        LOG_INFO("Grouped configurations into {} unique hook address(es)", hooks_by_address.size());
+        
+        // Create hooks for each address
+        for (const auto& [address, task_configs] : hooks_by_address) {
+            LOG_DEBUG("Creating hook for address 0x{:X} with {} task(s)", address, task_configs.size());
+            
+            if (auto result = create_hook_for_address(address, task_configs, manager); !result) {
+                LOG_ERROR("Failed to create hook for address 0x{:X}", address);
+                return result;
+            }
+            
+            LOG_INFO("Successfully created hook for address 0x{:X} with {} task(s)", address, task_configs.size());
+        }
+        
+        LOG_INFO("Hook creation from tasks completed successfully");
+        return {};
+    }
+
     /// @brief Create hooks from configuration file and add them to the manager
     /// @param config_path Path to configuration file
     /// @param manager Hook manager to add hooks to
