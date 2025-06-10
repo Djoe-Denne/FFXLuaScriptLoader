@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config_common.hpp"
+#include "patch_config.hpp"  // For InstructionPatch definition
 #include <toml++/toml.h>
 #include <vector>
 #include <string>
@@ -9,17 +10,7 @@
 
 namespace ff8_hook::config {
 
-/// @brief Single instruction patch data
-struct InstructionPatch {
-    std::uintptr_t address;           ///< Address to patch
-    std::vector<std::uint8_t> bytes;  ///< Instruction bytes with placeholders
-    std::int32_t offset;              ///< Offset to apply to new memory base
-    
-    /// @brief Check if this patch is valid
-    [[nodiscard]] constexpr bool is_valid() const noexcept {
-        return address != 0 && !bytes.empty();
-    }
-};
+// InstructionPatch is defined in patch_config.hpp
 
 /// @brief Loader for patch instruction files
 /// @note Handles loading and parsing of patch instruction TOML files

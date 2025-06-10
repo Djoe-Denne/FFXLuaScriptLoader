@@ -63,8 +63,8 @@ public:
         // Log summary of loaded configs
         for (const auto& config : configs) {
             LOG_INFO("Config summary - Key: '{}', Address: 0x{:X}, CopyAfter: 0x{:X}, Size: {} -> {}", 
-                     config.key, config.address, config.copy_after, 
-                     config.original_size, config.new_size);
+                     config.key(), config.address(), config.copy_after(), 
+                     config.original_size(), config.new_size());
         }
         
         return configs;
@@ -119,8 +119,24 @@ private:
     parse_memory_section(const std::string& section_key, const toml::table* table) {
         LOG_INFO("Processing memory section: {}", section_key);
         
-        CopyMemoryConfig config;
-        config.key = section_key;
+        // Create a temporary struct-style config for backward compatibility
+        struct TempCopyMemoryConfig {
+            std::string key;
+            std::uintptr_t address = 0;
+            std::uintptr_t copy_after = 0;
+            std::size_t original_size = 0;
+            std::size_t new_size = 0;
+            std::string description;
+            std::optional<std::string> patch;
+            
+            bool is_valid() const noexcept {
+                return address != 0 && copy_after != 0 && 
+                       original_size > 0 && new_size >= original_size;
+            }
+        };
+        
+        TempCopyMemoryConfig temp_config;
+        temp_config.key = section_key;
         
         // Parse required fields using modern C++ features
         auto parse_field = [&]<typename T>(const std::string& field_name, auto setter) -> bool {
@@ -135,8 +151,8 @@ private:
         
         // Parse address
         if (!parse_field.template operator()<std::string>("address", [&](const std::string& addr_str) {
-            config.address = ConfigParsingUtils::parse_address(addr_str);
-            LOG_INFO("Set address to: 0x{:X}", config.address);
+            temp_config.address = ConfigParsingUtils::parse_address(addr_str);
+            LOG_INFO("Set address to: 0x{:X}", temp_config.address);
         })) {
             LOG_WARNING("Missing or invalid 'address' field in section '{}'", section_key);
             return std::nullopt;
@@ -144,8 +160,8 @@ private:
         
         // Parse originalSize
         if (!parse_field.template operator()<std::int64_t>("originalSize", [&](std::int64_t size_val) {
-            config.original_size = static_cast<std::size_t>(size_val);
-            LOG_INFO("Set originalSize to: {}", config.original_size);
+            temp_config.original_size = static_cast<std::size_t>(size_val);
+            LOG_INFO("Set originalSize to: {}", temp_config.original_size);
         })) {
             LOG_WARNING("Missing or invalid 'originalSize' field in section '{}'", section_key);
             return std::nullopt;
@@ -153,8 +169,8 @@ private:
         
         // Parse newSize
         if (!parse_field.template operator()<std::int64_t>("newSize", [&](std::int64_t size_val) {
-            config.new_size = static_cast<std::size_t>(size_val);
-            LOG_INFO("Set newSize to: {}", config.new_size);
+            temp_config.new_size = static_cast<std::size_t>(size_val);
+            LOG_INFO("Set newSize to: {}", temp_config.new_size);
         })) {
             LOG_WARNING("Missing or invalid 'newSize' field in section '{}'", section_key);
             return std::nullopt;
@@ -162,8 +178,8 @@ private:
         
         // Parse copyAfter
         if (!parse_field.template operator()<std::string>("copyAfter", [&](const std::string& addr_str) {
-            config.copy_after = ConfigParsingUtils::parse_address(addr_str);
-            LOG_INFO("Set copyAfter to: 0x{:X}", config.copy_after);
+            temp_config.copy_after = ConfigParsingUtils::parse_address(addr_str);
+            LOG_INFO("Set copyAfter to: 0x{:X}", temp_config.copy_after);
         })) {
             LOG_WARNING("Missing or invalid 'copyAfter' field in section '{}'", section_key);
             return std::nullopt;
@@ -171,23 +187,34 @@ private:
         
         // Parse optional fields
         parse_field.template operator()<std::string>("description", [&](const std::string& desc_str) {
-            config.description = desc_str;
-            LOG_INFO("Set description to: '{}'", config.description);
+            temp_config.description = desc_str;
+            LOG_INFO("Set description to: '{}'", temp_config.description);
         });
         
         parse_field.template operator()<std::string>("patch", [&](const std::string& patch_str) {
-            config.patch = patch_str;
-            LOG_INFO("Set patch file to: '{}'", *config.patch);
+            temp_config.patch = patch_str;
+            LOG_INFO("Set patch file to: '{}'", *temp_config.patch);
         });
         
         // Validate configuration
         LOG_INFO("Validating config for section '{}': address=0x{:X}, copy_after=0x{:X}, original_size={}, new_size={}", 
-                 section_key, config.address, config.copy_after, config.original_size, config.new_size);
+                 section_key, temp_config.address, temp_config.copy_after, temp_config.original_size, temp_config.new_size);
         
-        if (!config.is_valid()) {
+        if (!temp_config.is_valid()) {
             LOG_WARNING("Invalid config for section '{}' - address=0x{:X}, copy_after=0x{:X}, original_size={}, new_size={}", 
-                       section_key, config.address, config.copy_after, config.original_size, config.new_size);
+                       section_key, temp_config.address, temp_config.copy_after, temp_config.original_size, temp_config.new_size);
             return std::nullopt;
+        }
+        
+        // Convert to new CopyMemoryConfig class
+        CopyMemoryConfig config(temp_config.key, "Memory Config for " + temp_config.key);
+        config.set_address(temp_config.address);
+        config.set_copy_after(temp_config.copy_after);
+        config.set_original_size(temp_config.original_size);
+        config.set_new_size(temp_config.new_size);
+        config.set_description(temp_config.description);
+        if (temp_config.patch.has_value()) {
+            config.set_patch(*temp_config.patch);
         }
         
         return config;

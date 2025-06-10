@@ -9,6 +9,7 @@ description = "Main configuration file that references all task configurations"
 [tasks.memory_expansion]
 name = "Memory Expansion"
 description = "Tasks that expand memory regions for FF8 modding"
+type = "memory"
 config_file = "config/tasks/memory_config.toml"
 enabled = true
 
@@ -16,5 +17,6 @@ enabled = true
 [tasks.magic_patches]
 name = "Magic System Patches"
 description = "Pre-patched instructions for magic system modifications"
+type = "patch"
 config_file = "config/tasks/magic_patch.toml"
 enabled = true 

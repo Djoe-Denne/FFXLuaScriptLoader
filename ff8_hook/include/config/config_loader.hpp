@@ -25,9 +25,18 @@ public:
         return TaskLoader::load_tasks(tasks_file_path);
     }
     
-    /// @brief Load all memory configurations from tasks
+    /// @brief Load all configurations from tasks using the generic factory
+    /// @param tasks_file_path Path to the main tasks.toml file
+    /// @return Vector of configuration objects or error
+    [[nodiscard]] static ConfigResult<std::vector<ConfigPtr>> 
+    load_configs_from_tasks(const std::string& tasks_file_path) {
+        return TaskLoader::load_configs_from_tasks(tasks_file_path);
+    }
+
+    /// @brief Load all memory configurations from tasks (backward compatibility)
     /// @param tasks_file_path Path to the main tasks.toml file
     /// @return Vector of memory copy configurations or error
+    /// @deprecated Use load_configs_from_tasks instead
     [[nodiscard]] static ConfigResult<std::vector<CopyMemoryConfig>> 
     load_memory_configs_from_tasks(const std::string& tasks_file_path) {
         return TaskLoader::load_memory_configs_from_tasks(tasks_file_path);

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "config_common.hpp"
+#include "config_base.hpp"
 #include "memory_config.hpp"
+#include "config_factory.hpp"
 #include <toml++/toml.h>
 #include <vector>
 #include <string>
@@ -14,11 +16,15 @@ struct TaskInfo {
     std::string name;           ///< Display name of the task
     std::string description;    ///< Description of the task
     std::string config_file;    ///< Path to the task's config file
+    ConfigType type;            ///< Type of configuration
     bool enabled;               ///< Whether the task is enabled
+    
+    /// @brief Constructor
+    TaskInfo() : type(ConfigType::Unknown), enabled(true) {}
     
     /// @brief Check if this task info is valid
     [[nodiscard]] constexpr bool is_valid() const noexcept {
-        return !name.empty() && !config_file.empty();
+        return !name.empty() && !config_file.empty() && type != ConfigType::Unknown;
     }
 };
 
@@ -88,9 +94,16 @@ public:
         return tasks;
     }
     
-    /// @brief Load all memory configurations from tasks
+    /// @brief Load all configurations from tasks using the generic factory
+    /// @param tasks_file_path Path to the main tasks.toml file
+    /// @return Vector of configuration objects or error
+    [[nodiscard]] static ConfigResult<std::vector<ConfigPtr>> 
+    load_configs_from_tasks(const std::string& tasks_file_path);
+
+    /// @brief Load all memory configurations from tasks (backward compatibility)
     /// @param tasks_file_path Path to the main tasks.toml file
     /// @return Vector of memory copy configurations or error
+    /// @deprecated Use load_configs_from_tasks instead
     [[nodiscard]] static ConfigResult<std::vector<CopyMemoryConfig>> 
     load_memory_configs_from_tasks(const std::string& tasks_file_path);
 
@@ -127,6 +140,14 @@ private:
         if (auto config_file = task_table->get("config_file")) {
             if (auto config_str = config_file->value<std::string>()) {
                 task_info.config_file = *config_str;
+            }
+        }
+        
+        // Parse type field
+        if (auto type_field = task_table->get("type")) {
+            if (auto type_str = type_field->value<std::string>()) {
+                task_info.type = from_string(*type_str);
+                LOG_DEBUG("Parsed task type: '{}' -> {}", *type_str, static_cast<int>(task_info.type));
             }
         }
         
