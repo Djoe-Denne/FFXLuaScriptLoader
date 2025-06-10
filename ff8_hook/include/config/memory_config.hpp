@@ -18,8 +18,7 @@ public:
         , address_(0)
         , copy_after_(0)
         , original_size_(0)
-        , new_size_(0)
-        , patch_{} {}
+        , new_size_(0) {}
 
     /// @brief Copy constructor
     /// @param other Another CopyMemoryConfig to copy from
@@ -28,8 +27,7 @@ public:
         , address_(other.address_)
         , copy_after_(other.copy_after_)
         , original_size_(other.original_size_)
-        , new_size_(other.new_size_)
-        , patch_(other.patch_) {
+        , new_size_(other.new_size_) {
         set_description(other.description());
         set_enabled(other.enabled());
     }
@@ -42,20 +40,12 @@ public:
     [[nodiscard]] constexpr std::uintptr_t copy_after() const noexcept { return copy_after_; }
     [[nodiscard]] constexpr std::size_t original_size() const noexcept { return original_size_; }
     [[nodiscard]] constexpr std::size_t new_size() const noexcept { return new_size_; }
-    [[nodiscard]] const std::optional<std::string>& patch() const noexcept { return patch_; }
 
     // Mutators
     void set_address(std::uintptr_t addr) noexcept { address_ = addr; }
     void set_copy_after(std::uintptr_t addr) noexcept { copy_after_ = addr; }
     void set_original_size(std::size_t size) noexcept { original_size_ = size; }
     void set_new_size(std::size_t size) noexcept { new_size_ = size; }
-    void set_patch(std::string patch_path) { patch_ = std::move(patch_path); }
-
-    /// @brief Check if this config has a patch file
-    /// @return true if patch file is specified
-    [[nodiscard]] bool has_patch() const noexcept {
-        return patch_.has_value() && !patch_->empty();
-    }
 
     /// @brief Check if this configuration is valid
     /// @return True if all required fields are properly set
@@ -79,7 +69,6 @@ private:
     std::uintptr_t copy_after_;                ///< Address after which to place new memory
     std::size_t original_size_;                ///< Original size of the memory region
     std::size_t new_size_;                     ///< New size for the expanded memory region
-    std::optional<std::string> patch_;         ///< Optional patch file path
 };
 
 } // namespace ff8_hook::config

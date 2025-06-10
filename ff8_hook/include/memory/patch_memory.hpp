@@ -15,8 +15,8 @@ namespace ff8_hook::memory {
 /// @brief Use instruction patch from config namespace
 using InstructionPatch = config::InstructionPatch;
 
-/// @brief Patch memory configuration
-using PatchMemoryConfig = config::PatchMemoryConfig;
+/// @brief Use patch config from config namespace
+using PatchConfig = config::PatchConfig;
 
 /// @brief Task that applies memory patches to instructions
 class PatchMemoryTask final : public task::IHookTask {
@@ -24,31 +24,31 @@ public:
     /// @brief Construct a memory patch task
     /// @param config Configuration for the patch operation
     /// @param patches Pre-parsed instruction patches
-    PatchMemoryTask(PatchMemoryConfig config, std::vector<InstructionPatch> patches) noexcept
+    PatchMemoryTask(PatchConfig config, std::vector<InstructionPatch> patches) noexcept
         : config_(std::move(config)), patches_(std::move(patches)) {}
     
     /// @brief Execute the memory patch operation
     /// @return Task result indicating success or failure
     [[nodiscard]] task::TaskResult execute() override {
-        LOG_DEBUG("Executing PatchMemoryTask for key '{}'", config_.key);
-        LOG_INFO("Applying {} patch instruction(s) for task '{}'", patches_.size(), config_.key);
+        LOG_DEBUG("Executing PatchMemoryTask for key '{}'", config_.key());
+        LOG_INFO("Applying {} patch instruction(s) for task '{}'", patches_.size(), config_.key());
         
         if (!config_.is_valid()) {
-            LOG_ERROR("Invalid configuration for PatchMemoryTask '{}'", config_.key);
-            return task::TaskResult{}; // Return empty result for error
+            LOG_ERROR("Invalid configuration for PatchMemoryTask '{}'", config_.key());
+            return std::unexpected(task::TaskError::invalid_config);
         }
         
         if (patches_.empty()) {
-            LOG_WARNING("No patches to apply for task '{}'", config_.key);
-            return task::TaskResult{};
+            LOG_WARNING("No patches to apply for task '{}'", config_.key());
+            return {};
         }
         
         try {
-            // Get the new memory base address from context
-            auto memory_region = context::ModContext::instance().get_memory_region(config_.key);
+            // Get the new memory base address from context  
+            auto memory_region = context::ModContext::instance().get_memory_region(config_.key());
             if (!memory_region) {
-                LOG_ERROR("Memory region '{}' not found in context for PatchMemoryTask", config_.key);
-                return task::TaskResult{}; // Return empty result for error
+                LOG_ERROR("Memory region '{}' not found in context for PatchMemoryTask", config_.key());
+                return std::unexpected(task::TaskError::invalid_address);
             }
             
             const auto new_base = reinterpret_cast<std::uintptr_t>(memory_region->data.get());
@@ -65,21 +65,21 @@ public:
             }
             
             LOG_INFO("Successfully applied {}/{} patches for task '{}'", 
-                    successful_patches, patches_.size(), config_.key);
+                    successful_patches, patches_.size(), config_.key());
             
             if (successful_patches == 0) {
-                LOG_ERROR("No patches were successfully applied for task '{}'", config_.key);
-                return task::TaskResult{}; // Return empty result for error
+                LOG_ERROR("No patches were successfully applied for task '{}'", config_.key());
+                return std::unexpected(task::TaskError::patch_failed);
             }
             
-            return task::TaskResult{};
+            return {};
             
         } catch (const std::exception& e) {
-            LOG_ERROR("Exception in PatchMemoryTask '{}': {}", config_.key, e.what());
-            return task::TaskResult{}; // Return empty result for error
+            LOG_ERROR("Exception in PatchMemoryTask '{}': {}", config_.key(), e.what());
+            return std::unexpected(task::TaskError::patch_failed);
         } catch (...) {
-            LOG_ERROR("Unknown exception in PatchMemoryTask '{}'", config_.key);
-            return task::TaskResult{}; // Return empty result for error
+            LOG_ERROR("Unknown exception in PatchMemoryTask '{}'", config_.key());
+            return std::unexpected(task::TaskError::patch_failed);
         }
     }
     
@@ -92,12 +92,12 @@ public:
     /// @brief Get the task description
     /// @return Task description
     [[nodiscard]] std::string description() const override {
-        return "Apply " + std::to_string(patches_.size()) + " memory patches for '" + config_.key + "'";
+        return "Apply " + std::to_string(patches_.size()) + " memory patches for '" + config_.key() + "'";
     }
     
     /// @brief Get the configuration
-    /// @return Patch memory configuration
-    [[nodiscard]] const PatchMemoryConfig& config() const noexcept {
+    /// @return Patch configuration
+    [[nodiscard]] const PatchConfig& config() const noexcept {
         return config_;
     }
     
@@ -108,7 +108,7 @@ public:
     }
     
 private:
-    PatchMemoryConfig config_;
+    PatchConfig config_;
     std::vector<InstructionPatch> patches_;
     
     /// @brief Apply a single instruction patch

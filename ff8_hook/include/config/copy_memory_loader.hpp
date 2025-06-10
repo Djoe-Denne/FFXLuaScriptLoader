@@ -191,10 +191,7 @@ private:
             LOG_INFO("Set description to: '{}'", temp_config.description);
         });
         
-        parse_field.template operator()<std::string>("patch", [&](const std::string& patch_str) {
-            temp_config.patch = patch_str;
-            LOG_INFO("Set patch file to: '{}'", *temp_config.patch);
-        });
+        // Note: patch field is no longer supported - use followBy in tasks.toml instead
         
         // Validate configuration
         LOG_INFO("Validating config for section '{}': address=0x{:X}, copy_after=0x{:X}, original_size={}, new_size={}", 
@@ -213,9 +210,6 @@ private:
         config.set_original_size(temp_config.original_size);
         config.set_new_size(temp_config.new_size);
         config.set_description(temp_config.description);
-        if (temp_config.patch.has_value()) {
-            config.set_patch(*temp_config.patch);
-        }
         
         return config;
     }

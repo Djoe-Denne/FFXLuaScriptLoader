@@ -13,11 +13,12 @@ namespace ff8_hook::config {
 
 /// @brief Task metadata from tasks.toml
 struct TaskInfo {
-    std::string name;           ///< Display name of the task
-    std::string description;    ///< Description of the task
-    std::string config_file;    ///< Path to the task's config file
-    ConfigType type;            ///< Type of configuration
-    bool enabled;               ///< Whether the task is enabled
+    std::string name;                    ///< Display name of the task
+    std::string description;             ///< Description of the task
+    std::string config_file;             ///< Path to the task's config file
+    ConfigType type;                     ///< Type of configuration
+    std::vector<std::string> follow_by;  ///< Tasks to execute after this one completes
+    bool enabled;                        ///< Whether the task is enabled
     
     /// @brief Constructor
     TaskInfo() : type(ConfigType::Unknown), enabled(true) {}
@@ -25,6 +26,16 @@ struct TaskInfo {
     /// @brief Check if this task info is valid
     [[nodiscard]] constexpr bool is_valid() const noexcept {
         return !name.empty() && !config_file.empty() && type != ConfigType::Unknown;
+    }
+    
+    /// @brief Check if this task has follow-up tasks
+    [[nodiscard]] constexpr bool has_follow_up_tasks() const noexcept {
+        return !follow_by.empty();
+    }
+    
+    /// @brief Get follow-up tasks
+    [[nodiscard]] const std::vector<std::string>& get_follow_up_tasks() const noexcept {
+        return follow_by;
     }
 };
 
@@ -100,6 +111,12 @@ public:
     [[nodiscard]] static ConfigResult<std::vector<ConfigPtr>> 
     load_configs_from_tasks(const std::string& tasks_file_path);
 
+    /// @brief Build execution order respecting followBy dependencies
+    /// @param tasks Vector of task information
+    /// @return Vector of task keys in execution order or error if cycles detected
+    [[nodiscard]] static ConfigResult<std::vector<std::string>>
+    build_execution_order(const std::vector<TaskInfo>& tasks);
+
     /// @brief Load all memory configurations from tasks (backward compatibility)
     /// @param tasks_file_path Path to the main tasks.toml file
     /// @return Vector of memory copy configurations or error
@@ -148,6 +165,24 @@ private:
             if (auto type_str = type_field->value<std::string>()) {
                 task_info.type = from_string(*type_str);
                 LOG_DEBUG("Parsed task type: '{}' -> {}", *type_str, static_cast<int>(task_info.type));
+            }
+        }
+        
+        // Parse followBy field (can be string or array of strings)
+        if (auto follow_by_field = task_table->get("followBy")) {
+            if (auto follow_by_str = follow_by_field->value<std::string>()) {
+                // Single task as string
+                task_info.follow_by.push_back(*follow_by_str);
+                LOG_DEBUG("Parsed single followBy task: '{}'", *follow_by_str);
+            } else if (follow_by_field->is_array()) {
+                // Multiple tasks as array
+                auto follow_by_array = follow_by_field->as_array();
+                for (const auto& task_node : *follow_by_array) {
+                    if (auto task_str = task_node.value<std::string>()) {
+                        task_info.follow_by.push_back(*task_str);
+                        LOG_DEBUG("Parsed followBy task: '{}'", *task_str);
+                    }
+                }
             }
         }
         

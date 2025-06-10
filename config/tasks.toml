@@ -11,6 +11,7 @@ name = "Memory Expansion"
 description = "Tasks that expand memory regions for FF8 modding"
 type = "memory"
 config_file = "config/tasks/memory_config.toml"
+followBy = ["magic_patches"]
 enabled = true
 
 # Patch tasks  
