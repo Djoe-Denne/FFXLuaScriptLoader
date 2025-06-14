@@ -43,6 +43,8 @@ public:
     // IPluginHost interface
     PluginResult register_config(std::unique_ptr<::app_hook::config::ConfigBase> config) override;
     PluginResult register_config_loader(std::unique_ptr<::app_hook::config::ConfigLoaderBase> loader) override;
+    PluginResult register_task_creator(const std::string& config_type_name, 
+                                        std::function<std::unique_ptr<::app_hook::task::IHookTask>(const ::app_hook::config::ConfigBase&)> creator) override;
     std::string get_plugin_data_path() const override;
     void log_message(int level, const std::string& message) override;
     std::pair<void*, std::uint32_t> get_process_info() const override;

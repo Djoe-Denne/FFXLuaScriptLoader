@@ -3,6 +3,8 @@
 #include <string>
 #include <memory>
 #include <string_view>
+#include <cstdint>
+#include <optional>
 
 namespace app_hook::config {
 
@@ -42,6 +44,23 @@ enum class ConfigType : std::uint8_t {
     if (type_str == "graphics") return ConfigType::Graphics;
     return ConfigType::Unknown;
 }
+
+/// @brief Interface for configurations that can provide hook addresses
+/// @note Configurations implementing this interface can be used as address triggers for hooks
+class AddressTrigger {
+public:
+    virtual ~AddressTrigger() = default;
+    
+    /// @brief Get the hook address for this configuration
+    /// @return Hook address where the hook should be installed
+    [[nodiscard]] virtual std::uintptr_t get_hook_address() const noexcept = 0;
+    
+    /// @brief Check if this configuration provides a valid hook address
+    /// @return True if hook address is valid (non-zero)
+    [[nodiscard]] virtual bool has_valid_hook_address() const noexcept {
+        return get_hook_address() != 0;
+    }
+};
 
 /// @brief Base class for all configuration types
 /// @note Provides common interface and polymorphic behavior
@@ -116,6 +135,21 @@ public:
                " (enabled: " + (enabled_ ? "true" : "false") + ")";
     }
 
+    /// @brief Check if this configuration is an address trigger
+    /// @return True if this config implements AddressTrigger interface
+    [[nodiscard]] bool is_address_trigger() const noexcept {
+        return dynamic_cast<const AddressTrigger*>(this) != nullptr;
+    }
+
+    /// @brief Get hook address if this configuration is an address trigger
+    /// @return Hook address or 0 if not an address trigger
+    [[nodiscard]] std::uintptr_t get_hook_address_if_trigger() const noexcept {
+        if (auto* trigger = dynamic_cast<const AddressTrigger*>(this)) {
+            return trigger->get_hook_address();
+        }
+        return 0;
+    }
+
 protected:
     /// @brief Configuration type
     ConfigType type_;
@@ -150,7 +184,7 @@ concept ConfigurationConcept = std::derived_from<ConfigT, ConfigBase>;
 /// @return Smart pointer to created configuration
 template<ConfigurationConcept ConfigT, typename... Args>
 [[nodiscard]] ConfigPtr make_config(Args&&... args) {
-    return std::make_unique<ConfigT>(std::forward<Args>(args)...);
+    return std::make_shared<ConfigT>(std::forward<Args>(args)...);
 }
 
 } // namespace app_hook::config 

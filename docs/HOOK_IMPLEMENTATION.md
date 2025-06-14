@@ -38,7 +38,7 @@ namespace ff8_hook::config {
         load_memory_configs(const std::string& file_path);
     };
     
-    class PatchLoader {
+    class PatchConfigLoader {
         [[nodiscard]] static ConfigResult<std::vector<InstructionPatch>> 
         load_patch_instructions(const std::string& file_path);
     };

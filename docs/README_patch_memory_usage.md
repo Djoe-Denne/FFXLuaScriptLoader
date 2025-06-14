@@ -259,7 +259,7 @@ Test Results Summary:
 ```cpp
 // Configuration validation tests
 TEST(ConfigLoaderTest, LoadPatchInstructions) {
-    auto result = PatchLoader::load_patch_instructions("magic_patch.toml");
+    auto result = PatchConfigLoader::load_patch_instructions("magic_patch.toml");
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result->size(), 67);
 }

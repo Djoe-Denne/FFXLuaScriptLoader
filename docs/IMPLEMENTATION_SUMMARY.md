@@ -41,7 +41,7 @@ template<ConfigurationConcept ConfigT, typename... Args>
 **Specialized Loaders:**
 - `TaskLoader`: Handles task orchestration and dependency resolution
 - `CopyMemoryLoader`: Memory configuration parsing with validation
-- `PatchLoader`: Instruction patch parsing with error handling
+- `PatchConfigLoader`: Instruction patch parsing with error handling
 - `ConfigFactory`: Generic factory with type safety
 
 **Error Handling:**

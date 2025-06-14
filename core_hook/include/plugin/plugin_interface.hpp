@@ -9,6 +9,7 @@
 // Include the actual headers for config types  
 #include "config/config_base.hpp"
 #include "config/config_loader_base.hpp"
+#include "task/hook_task.hpp"
 
 namespace app_hook::plugin {
 
@@ -63,6 +64,13 @@ public:
     /// @return Success if registered
     virtual PluginResult register_config_loader(std::unique_ptr<::app_hook::config::ConfigLoaderBase> loader) = 0;
 
+    /// @brief Register a task creator with the host
+    /// @param config_type_name Name of the configuration type
+    /// @param creator Function to create tasks from this config type
+    /// @return Success if registered
+    virtual PluginResult register_task_creator(const std::string& config_type_name, 
+                                                std::function<std::unique_ptr<::app_hook::task::IHookTask>(const ::app_hook::config::ConfigBase&)> creator) = 0;
+
     /// @brief Get the plugin data directory path
     /// @return Path to plugin data directory
     virtual std::string get_plugin_data_path() const = 0;
@@ -102,7 +110,7 @@ public:
 
 /// @brief Plugin factory function signature
 /// @return Created plugin instance
-using CreatePluginFunc = std::unique_ptr<IPlugin>(*)();
+using CreatePluginFunc = IPlugin*(*)();
 
 /// @brief Plugin destruction function signature
 /// @param plugin Plugin to destroy
@@ -119,8 +127,8 @@ using DestroyPluginFunc = void(*)(IPlugin*);
 
 /// @brief Convenience macro for plugin exports
 #define EXPORT_PLUGIN(PluginClass) \
-    PLUGIN_EXPORT std::unique_ptr<app_hook::plugin::IPlugin> CreatePlugin() { \
-        return std::make_unique<PluginClass>(); \
+    PLUGIN_EXPORT app_hook::plugin::IPlugin* CreatePlugin() { \
+        return new PluginClass(); \
     } \
     PLUGIN_EXPORT void DestroyPlugin(app_hook::plugin::IPlugin* plugin) { \
         delete plugin; \

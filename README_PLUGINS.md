@@ -160,7 +160,7 @@ EXPORT_PLUGIN(MyPlugin)
 The following components have been moved from `app_hook.dll` to `memory_plugin.dll`:
 
 - `CopyMemoryLoader`
-- `PatchLoader` 
+- `PatchConfigLoader` 
 - `CopyMemoryConfig`
 - `PatchConfig`
 - Memory operation implementations

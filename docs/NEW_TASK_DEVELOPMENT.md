@@ -78,7 +78,7 @@ public:
 
 ### 4. Create Configuration Loader
 
-**Pattern**: Follow `CopyMemoryLoader` or `PatchLoader` examples.
+**Pattern**: Follow `CopyMemoryLoader` or `PatchConfigLoader` examples.
 
 **Key requirements**:
 - Static method `load_[type]_configs(const std::string& file_path)`
@@ -156,7 +156,7 @@ case ConfigType::YourType:
 **Look at existing implementations**:
 - Config: `CopyMemoryConfig`, `PatchConfig`
 - Task: `CopyMemoryTask`, `PatchMemoryTask`  
-- Loader: `CopyMemoryLoader`, `PatchLoader`
+- Loader: `CopyMemoryLoader`, `PatchConfigLoader`
 - Tests: `test_config_base.cpp`, `test_copy_memory.cpp`
 
 **Common TaskError types**:

@@ -34,21 +34,66 @@ void InstallHooks() {
         LOG_INFO("Plugin registered configuration: {} ({})", config->key(), config->name());
     };
     
-    if (auto result = g_plugin_manager.initialize("data", std::move(config_registry)); result != app_hook::plugin::PluginResult::Success) {
-        LOG_ERROR("Failed to initialize plugin manager");
-        MessageBoxA(NULL, "Failed to initialize plugin manager\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+    try {
+        LOG_INFO("About to initialize plugin manager...");
+        if (auto result = g_plugin_manager.initialize("data", std::move(config_registry)); result != app_hook::plugin::PluginResult::Success) {
+            LOG_ERROR("Failed to initialize plugin manager with result: {}", static_cast<int>(result));
+            MessageBoxA(NULL, "Failed to initialize plugin manager\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+            return;
+        }
+        LOG_INFO("Plugin manager initialized successfully");
+    }
+    catch (const std::exception& e) {
+        LOG_ERROR("Exception during plugin manager initialization: {}", e.what());
+        MessageBoxA(NULL, "Exception during plugin manager initialization\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+        return;
+    }
+    catch (...) {
+        LOG_ERROR("Unknown exception during plugin manager initialization");
+        MessageBoxA(NULL, "Unknown exception during plugin manager initialization\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
         return;
     }
     
     // Load plugins from tasks directory
     LOG_INFO("Loading plugins from directory: mods/xtender/tasks/");
-    const auto loaded_plugins = g_plugin_manager.load_plugins_from_directory("mods/xtender/tasks");
-    LOG_INFO("Loaded {} plugin(s)", loaded_plugins);
+    std::size_t loaded_plugins = 0;
+    
+    try {
+        LOG_INFO("About to call load_plugins_from_directory...");
+        loaded_plugins = g_plugin_manager.load_plugins_from_directory("mods/xtender/tasks");
+        LOG_INFO("load_plugins_from_directory returned: {}", loaded_plugins);
+    }
+    catch (const std::exception& e) {
+        LOG_ERROR("Exception during plugin loading: {}", e.what());
+        MessageBoxA(NULL, "Exception during plugin loading\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+        return;
+    }
+    catch (...) {
+        LOG_ERROR("Unknown exception during plugin loading");
+        MessageBoxA(NULL, "Unknown exception during plugin loading\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+        return;
+    }
+    
+    LOG_INFO("Loaded {} plugin(s) successfully", loaded_plugins);
     
     // Initialize plugins with configuration
-    if (auto result = g_plugin_manager.initialize_plugins("config"); result != app_hook::plugin::PluginResult::Success) {
-        LOG_ERROR("Failed to initialize plugins");
-        MessageBoxA(NULL, "Failed to initialize plugins\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+    LOG_INFO("About to initialize plugins with configuration...");
+    try {
+        if (auto result = g_plugin_manager.initialize_plugins("config"); result != app_hook::plugin::PluginResult::Success) {
+            LOG_ERROR("Failed to initialize plugins with result: {}", static_cast<int>(result));
+            MessageBoxA(NULL, "Failed to initialize plugins\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+            return;
+        }
+        LOG_INFO("Plugins initialized successfully");
+    }
+    catch (const std::exception& e) {
+        LOG_ERROR("Exception during plugin initialization: {}", e.what());
+        MessageBoxA(NULL, "Exception during plugin initialization\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+        return;
+    }
+    catch (...) {
+        LOG_ERROR("Unknown exception during plugin initialization");
+        MessageBoxA(NULL, "Unknown exception during plugin initialization\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
         return;
     }
     
@@ -56,9 +101,23 @@ void InstallHooks() {
     const std::string tasks_config_path = "config/tasks.toml";
     LOG_INFO("Loading tasks configuration from: {}", tasks_config_path);
     
-    if (auto result = app_hook::hook::HookFactory::create_hooks_from_tasks(tasks_config_path, g_hook_manager); !result) {
-        LOG_ERROR("Failed to create hooks from configuration");
-        MessageBoxA(NULL, "Failed to create hooks from configuration\nCheck logs/app_hook.log for details", "Config Error", MB_OK);
+    try {
+        LOG_INFO("About to create hooks from configuration...");
+        if (auto result = app_hook::hook::HookFactory::create_hooks_from_tasks(tasks_config_path, g_hook_manager); !result) {
+            LOG_ERROR("Failed to create hooks from configuration");
+            MessageBoxA(NULL, "Failed to create hooks from configuration\nCheck logs/app_hook.log for details", "Config Error", MB_OK);
+            return;
+        }
+        LOG_INFO("Hooks created successfully from configuration");
+    }
+    catch (const std::exception& e) {
+        LOG_ERROR("Exception during hook creation: {}", e.what());
+        MessageBoxA(NULL, "Exception during hook creation\nCheck logs/app_hook.log for details", "Config Error", MB_OK);
+        return;
+    }
+    catch (...) {
+        LOG_ERROR("Unknown exception during hook creation");
+        MessageBoxA(NULL, "Unknown exception during hook creation\nCheck logs/app_hook.log for details", "Config Error", MB_OK);
         return;
     }
     
@@ -67,9 +126,22 @@ void InstallHooks() {
     
     // Install all hooks
     LOG_INFO("Installing hooks...");
-    if (auto result = g_hook_manager.install_all(); !result) {
-        LOG_ERROR("Failed to install hooks");
-        MessageBoxA(NULL, "Failed to install hooks\nCheck logs/app_hook.log for details", "Hook Error", MB_OK);
+    try {
+        if (auto result = g_hook_manager.install_all(); !result) {
+            LOG_ERROR("Failed to install hooks");
+            MessageBoxA(NULL, "Failed to install hooks\nCheck logs/app_hook.log for details", "Hook Error", MB_OK);
+            return;
+        }
+        LOG_INFO("Hooks installed successfully");
+    }
+    catch (const std::exception& e) {
+        LOG_ERROR("Exception during hook installation: {}", e.what());
+        MessageBoxA(NULL, "Exception during hook installation\nCheck logs/app_hook.log for details", "Hook Error", MB_OK);
+        return;
+    }
+    catch (...) {
+        LOG_ERROR("Unknown exception during hook installation");
+        MessageBoxA(NULL, "Unknown exception during hook installation\nCheck logs/app_hook.log for details", "Hook Error", MB_OK);
         return;
     }
     
@@ -104,28 +176,58 @@ void UninstallHooks() {
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     switch (reason) {
         case DLL_PROCESS_ATTACH: {
-            // Quick logging initialization for DllMain logging
-            app_hook::util::initialize_logging("logs/app_hook.log", 1);  // 1 = debug level
-            
-            LOG_INFO("DLL_PROCESS_ATTACH - DLL loaded into process");
-            LOG_INFO("Module handle: 0x{:X}", reinterpret_cast<uintptr_t>(hModule));
-            
-            DisableThreadLibraryCalls(hModule);
-            
-            HANDLE thread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)InstallHooks, nullptr, 0, nullptr);
-            if (thread == NULL) {
-                LOG_ERROR("Failed to create InstallHooks thread, error: {}", GetLastError());
-                MessageBoxA(NULL, "Failed to create hook installation thread", "Thread Error", MB_OK);
-            } else {
-                LOG_INFO("InstallHooks thread created successfully, handle: 0x{:X}", reinterpret_cast<uintptr_t>(thread));
-                CloseHandle(thread); // We don't need to keep the handle
+            try {
+                // Quick logging initialization for DllMain logging
+                app_hook::util::initialize_logging("logs/app_hook.log", 1);  // 1 = debug level
+                
+                LOG_INFO("DLL_PROCESS_ATTACH - DLL loaded into process");
+                LOG_INFO("Module handle: 0x{:X}", reinterpret_cast<uintptr_t>(hModule));
+                
+                DisableThreadLibraryCalls(hModule);
+                
+                LOG_INFO("About to create InstallHooks thread...");
+                HANDLE thread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)InstallHooks, nullptr, 0, nullptr);
+                if (thread == NULL) {
+                    DWORD error = GetLastError();
+                    LOG_ERROR("Failed to create InstallHooks thread, error: {}", error);
+                    MessageBoxA(NULL, "Failed to create hook installation thread", "Thread Error", MB_OK);
+                } else {
+                    LOG_INFO("InstallHooks thread created successfully, handle: 0x{:X}", reinterpret_cast<uintptr_t>(thread));
+                    CloseHandle(thread); // We don't need to keep the handle
+                }
+            }
+            catch (const std::exception& e) {
+                MessageBoxA(NULL, ("Exception in DLL_PROCESS_ATTACH: " + std::string(e.what())).c_str(), "DLL Error", MB_OK);
+                return FALSE;
+            }
+            catch (...) {
+                MessageBoxA(NULL, "Unknown exception in DLL_PROCESS_ATTACH", "DLL Error", MB_OK);
+                return FALSE;
             }
             break;
         }
             
         case DLL_PROCESS_DETACH:
-            LOG_INFO("DLL_PROCESS_DETACH - DLL being unloaded from process");
-            UninstallHooks();
+            try {
+                LOG_INFO("DLL_PROCESS_DETACH - DLL being unloaded from process");
+                UninstallHooks();
+            }
+            catch (const std::exception& e) {
+                // Log the error but don't show message box during shutdown
+                try {
+                    LOG_ERROR("Exception in DLL_PROCESS_DETACH: {}", e.what());
+                } catch (...) {
+                    // Ignore logging errors during shutdown
+                }
+            }
+            catch (...) {
+                // Log the error but don't show message box during shutdown
+                try {
+                    LOG_ERROR("Unknown exception in DLL_PROCESS_DETACH");
+                } catch (...) {
+                    // Ignore logging errors during shutdown
+                }
+            }
             break;
     }
     return TRUE;

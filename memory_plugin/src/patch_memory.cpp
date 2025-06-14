@@ -1,4 +1,8 @@
 #include "../include/memory/patch_memory.hpp"
+#include "../../core_hook/include/task/hook_task.hpp"
+#include "../../core_hook/include/context/mod_context.hpp"
+#include "../../core_hook/include/util/logger.hpp"
+#include <windows.h>
 
 namespace app_hook::memory {
 
@@ -18,7 +22,7 @@ task::TaskResult PatchMemoryTask::execute() {
     
     try {
         // Get the new memory base address from context  
-        auto memory_region = context::ModContext::instance().get_memory_region(config_.key());
+        auto memory_region = app_hook::context::ModContext::instance().get_memory_region(config_.key());
         if (!memory_region) {
             LOG_ERROR("Memory region '{}' not found in context for PatchMemoryTask", config_.key());
             return std::unexpected(task::TaskError::invalid_address);

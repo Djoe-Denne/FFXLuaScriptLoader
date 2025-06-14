@@ -26,8 +26,7 @@ Example: Expands data structures from fixed sizes to larger memory regions by au
 git clone https://github.com/Djoe-Denne/LegacySoftwareExtension.git
 cd LegacySoftwareExtension
 
-# Configure using preset (includes testing by default)
-cmake --preset=default-x32
+cmake -Bcmake -B build -A Win32 -DBUILD_TESTING=ON
 
 # Build
 cmake --build build --config Release
@@ -50,7 +49,7 @@ Examples:
 app_injector.exe myapp.exe
 
 # Inject custom_hook.dll into game.exe
-app_injector.exe game.exe custom_hook.dll
+app_injector.exe game.exe
 
 # Launch target application after starting injector
 ```

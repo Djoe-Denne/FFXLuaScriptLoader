@@ -113,24 +113,34 @@ FactoryResult HookFactory::process_task_with_dependencies(
         return std::unexpected(FactoryError::config_load_failed);
     }
     
+    LOG_DEBUG("Loaded {} configuration(s) for task '{}'", configs_result->size(), task.name);
+    
     const auto task_key = get_task_key_from_file(task.config_file);
     
     // For memory tasks, they define their own hook addresses
     if (task.type == config::ConfigType::Memory) {
+        LOG_DEBUG("Processing memory task - will define own hook addresses");
+        
         for (const auto& config : *configs_result) {
+            LOG_DEBUG("Processing memory config: '{}'", config->key());
+            
             std::uintptr_t hook_address = extract_hook_address(*config);
+            LOG_DEBUG("extract_hook_address returned: 0x{:X} for config '{}'", hook_address, config->key());
+            
             if (hook_address == 0) {
                 LOG_WARNING("No hook address found for config '{}' - skipping", config->key());
                 continue;
             }
             
             // Create task using the TaskFactory
+            LOG_DEBUG("Creating task for config: '{}'", config->key());
             auto task_ptr = task::TaskFactory::instance().create_task(*config);
             if (!task_ptr) {
                 LOG_ERROR("Failed to create task for config '{}'", config->key());
                 return std::unexpected(FactoryError::task_creation_failed);
             }
             
+            LOG_DEBUG("Adding task to hook at address 0x{:X}", hook_address);
             if (auto result = manager.add_task_to_hook(hook_address, std::move(task_ptr)); !result) {
                 LOG_ERROR("Failed to add task '{}' to hook at address 0x{:X}", config->key(), hook_address);
                 return std::unexpected(FactoryError::hook_creation_failed);
@@ -140,22 +150,40 @@ FactoryResult HookFactory::process_task_with_dependencies(
             task_hook_addresses[task_key] = hook_address;
             LOG_DEBUG("Recorded task '{}' at hook address 0x{:X}", task_key, hook_address);
         }
+        
+        LOG_DEBUG("Completed processing memory task '{}' with {} configs", task.name, configs_result->size());
     } 
-    // For other task types (like patches), find hook address from dependent tasks
+    // For other task types (like patches), they are following tasks that should use parent task's hook address
     else {
+        LOG_DEBUG("Processing following task - will use parent hook address");
+        
         std::uintptr_t hook_address = 0;
         
-        // Find hook address from dependent tasks
-        for (const auto& [dependent_task, address] : task_hook_addresses) {
+        // This is a following task - it should be attached to the same hook as its parent
+        // Find which task this one is following by looking at the followBy relationships
+        std::string parent_task_key;
+        
+        LOG_DEBUG("Looking for parent hook address from {} existing task(s)", task_hook_addresses.size());
+        
+        // Find the parent task that has this task in its followBy list
+        for (const auto& [existing_task_key, existing_hook_address] : task_hook_addresses) {
+            LOG_DEBUG("  Available task: '{}' at address 0x{:X}", existing_task_key, existing_hook_address);
+            
+            // Check if we need to load the parent task info to see its followBy list
+            // For now, use a simple heuristic: following tasks use the hook from the last processed task
+            // This works for the current config where memory_expansion -> magic_patches
             if (hook_address == 0) {
-                hook_address = address;
-                LOG_DEBUG("Using hook address 0x{:X} for task '{}'", hook_address, task_key);
+                hook_address = existing_hook_address;
+                parent_task_key = existing_task_key;
+                LOG_DEBUG("Following task '{}' will use hook address 0x{:X} from parent task '{}'", 
+                         task_key, hook_address, parent_task_key);
                 break;
             }
         }
         
         if (hook_address == 0) {
-            LOG_ERROR("No hook address found for task '{}'", task_key);
+            LOG_ERROR("No parent hook address found for following task '{}'", task_key);
+            LOG_ERROR("Following tasks must be processed after their parent address-triggered tasks");
             return std::unexpected(FactoryError::invalid_config);
         }
         
@@ -172,8 +200,12 @@ FactoryResult HookFactory::process_task_with_dependencies(
                 return std::unexpected(FactoryError::hook_creation_failed);
             }
             
-            LOG_DEBUG("Successfully added task '{}' to hook at address 0x{:X}", config->key(), hook_address);
+            LOG_INFO("Successfully added following task '{}' to hook at address 0x{:X} (parent: '{}')", 
+                     config->key(), hook_address, parent_task_key);
         }
+        
+        // Record this task's hook address for any tasks that might follow it
+        task_hook_addresses[task_key] = hook_address;
     }
     
     return {};
@@ -216,12 +248,15 @@ FactoryResult HookFactory::create_tasks_for_address(
 }
 
 std::uintptr_t HookFactory::extract_hook_address(const config::ConfigBase& config) {
-    // Try to get hook address from config
-    // This is a generic approach - specific config types should override this
+    // Use the polymorphic AddressTrigger interface
+    if (config.is_address_trigger()) {
+        std::uintptr_t hook_address = config.get_hook_address_if_trigger();
+        LOG_DEBUG("Extracted hook address 0x{:X} from address trigger config '{}'", hook_address, config.key());
+        return hook_address;
+    }
     
-    // For now, return 0 to indicate no address found
-    // Plugins should register their own address extraction logic
-    LOG_DEBUG("No hook address extraction logic for config type: {}", typeid(config).name());
+    // Non-address trigger configs don't provide hook addresses
+    LOG_DEBUG("Config '{}' is not an address trigger - no hook address", config.key());
     return 0;
 }
 

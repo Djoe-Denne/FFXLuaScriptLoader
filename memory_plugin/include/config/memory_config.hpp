@@ -8,7 +8,7 @@
 namespace app_hook::config {
 
 /// @brief Configuration for memory copy operations
-class CopyMemoryConfig : public ConfigBase {
+class CopyMemoryConfig : public ConfigBase, public AddressTrigger {
 public:
     /// @brief Constructor
     /// @param key Configuration key
@@ -46,6 +46,13 @@ public:
     void set_copy_after(std::uintptr_t addr) noexcept { copy_after_ = addr; }
     void set_original_size(std::size_t size) noexcept { original_size_ = size; }
     void set_new_size(std::size_t size) noexcept { new_size_ = size; }
+
+    // AddressTrigger interface implementation
+    /// @brief Get the hook address for this memory configuration
+    /// @return The copy_after address where the hook should be installed
+    [[nodiscard]] std::uintptr_t get_hook_address() const noexcept override {
+        return copy_after_;
+    }
 
     /// @brief Check if this configuration is valid
     /// @return True if all required fields are properly set

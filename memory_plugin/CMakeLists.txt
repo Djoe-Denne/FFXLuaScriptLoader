@@ -32,6 +32,9 @@ endif()
 set(SOURCES 
     src/memory_plugin.cpp
     src/memory_config_loader.cpp
+    src/patch_config_loader.cpp
+    src/patch_memory.cpp
+    src/copy_memory.cpp
 )
 
 # Create memory_plugin.dll
