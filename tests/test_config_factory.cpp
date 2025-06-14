@@ -16,7 +16,7 @@
 #include <memory>
 #include <vector>
 
-using namespace ff8_hook::config;
+using namespace app_hook::config;
 using namespace ::testing;
 
 namespace {

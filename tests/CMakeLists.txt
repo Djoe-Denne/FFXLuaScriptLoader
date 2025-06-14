@@ -1,6 +1,6 @@
-# FF8 Hook Unit Tests
+# Application Hook Unit Tests
 cmake_minimum_required(VERSION 3.25)
-project(FF8Hook_Tests VERSION 1.0.0 LANGUAGES CXX)
+project(AppHook_Tests VERSION 1.0.0 LANGUAGES CXX)
 
 # Force 32-bit architecture for tests too
 set(CMAKE_GENERATOR_PLATFORM Win32)
@@ -77,16 +77,16 @@ set(TEST_SOURCES
 )
 
 # Create test executable
-add_executable(ff8_hook_tests ${TEST_SOURCES})
+add_executable(app_hook_tests ${TEST_SOURCES})
 
 # Include directories
-target_include_directories(ff8_hook_tests PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../ff8_hook/include
+target_include_directories(app_hook_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../app_hook/include
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Link libraries
-target_link_libraries(ff8_hook_tests PRIVATE
+target_link_libraries(app_hook_tests PRIVATE
     gtest
     gtest_main
     gmock
@@ -99,7 +99,7 @@ target_link_libraries(ff8_hook_tests PRIVATE
 )
 
 # Compile definitions
-target_compile_definitions(ff8_hook_tests PRIVATE
+target_compile_definitions(app_hook_tests PRIVATE
     WIN32_LEAN_AND_MEAN
     NOMINMAX
     GTEST_HAS_STD_WSTRING=1
@@ -108,9 +108,9 @@ target_compile_definitions(ff8_hook_tests PRIVATE
 )
 
 # Add tests to CTest
-gtest_discover_tests(ff8_hook_tests)
+gtest_discover_tests(app_hook_tests)
 
 # Copy test data files if any exist
 # file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-message(STATUS "FF8Hook tests configured successfully") 
+message(STATUS "Application Hook tests configured successfully") 

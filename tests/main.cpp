@@ -1,9 +1,9 @@
 /**
  * @file main.cpp
- * @brief Main entry point for FF8Hook unit tests
+ * @brief Main entry point for Application Hook unit tests
  * 
  * This file initializes Google Test and runs all the test suites
- * for the FF8Hook project following C++23 conventions.
+ * for the Application Hook project following C++23 conventions.
  */
 
 #include <gtest/gtest.h>
@@ -17,8 +17,8 @@
  * @return Exit code (0 for success)
  */
 int main(int argc, char** argv) {
-    std::cout << "FF8Hook Unit Tests - C++23 Edition\n";
-    std::cout << "===================================\n";
+    std::cout << "AppHook Unit Tests\n";
+    std::cout << "==================\n";
     
     // Initialize Google Test and Google Mock
     ::testing::InitGoogleTest(&argc, argv);

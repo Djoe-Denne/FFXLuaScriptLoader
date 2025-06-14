@@ -7,7 +7,7 @@
 #include <format>
 #include <string_view>
 
-namespace ff8::injector {
+namespace injector {
 
     /**
      * @brief Find process ID by name (case-insensitive)
@@ -181,17 +181,41 @@ namespace ff8::injector {
         return true;
     }
 
-} // namespace ff8::injector
+    /**
+     * @brief Display usage information
+     * @param programName Name of the program executable
+     */
+    void ShowUsage(const char* programName) {
+        std::cout << "Usage: " << programName << " <process_name> [dll_name]\n\n";
+        std::cout << "Arguments:\n";
+        std::cout << "  process_name  Name of the target process (e.g., myapp.exe)\n";
+        std::cout << "  dll_name      Name of DLL to inject (default: app_hook.dll)\n\n";
+        std::cout << "Examples:\n";
+        std::cout << "  " << programName << " myapp.exe\n";
+        std::cout << "  " << programName << " game.exe custom_hook.dll\n";
+    }
 
-int main() {
-    using namespace ff8::injector;
+} // namespace injector
+
+int main(int argc, char* argv[]) {
+    using namespace injector;
     
-    std::cout << "FF8 Script Loader - DLL Injector\n";
-    std::cout << "=================================\n\n";
+    std::cout << "Generic DLL Injector for Legacy Software Extension\n";
+    std::cout << "=================================================\n\n";
+
+    // Parse command line arguments
+    if (argc < 2) {
+        ShowUsage(argv[0]);
+        system("pause");
+        return 1;
+    }
+
+    std::string processName = argv[1];
+    std::string dllName = (argc >= 3) ? argv[2] : "app_hook.dll";
 
     // Get the current directory and construct DLL path
     std::filesystem::path currentPath = std::filesystem::current_path();
-    std::filesystem::path dllPath = currentPath / "ff8_hook.dll";
+    std::filesystem::path dllPath = currentPath / dllName;
     
     // Convert to absolute path
     dllPath = std::filesystem::absolute(dllPath);
@@ -199,15 +223,16 @@ int main() {
     
     // Check if DLL exists
     if (!std::filesystem::exists(dllPath)) {
-        std::cerr << "Error: ff8_hook.dll not found in current directory!\n";
+        std::cerr << std::format("Error: {} not found in current directory!\n", dllName);
         std::cerr << std::format("Expected path: {}\n", dllPathStr);
         system("pause");
         return 1;
     }
     
+    std::cout << std::format("Target process: {}\n", processName);
     std::cout << std::format("DLL found at: {}\n\n", dllPathStr);
 
-    std::cout << "Looking for ff8_en.exe process...\n";
+    std::cout << std::format("Looking for {} process...\n", processName);
 
     // Keep trying to find the process
     DWORD processId = 0;
@@ -215,7 +240,7 @@ int main() {
     constexpr int maxAttempts = 30; // Wait up to 30 seconds
 
     while (processId == 0 && attempts < maxAttempts) {
-        processId = FindProcessId("ff8_en.exe");
+        processId = FindProcessId(processName);
         if (processId == 0) {
             std::cout << std::format("Process not found, waiting... ({}/{})\n", attempts + 1, maxAttempts);
             Sleep(1000); // Wait 1 second
@@ -224,13 +249,13 @@ int main() {
     }
 
     if (processId == 0) {
-        std::cerr << std::format("Error: Could not find ff8_en.exe process after {} attempts!\n", maxAttempts);
-        std::cerr << "Make sure Final Fantasy VIII is running.\n";
+        std::cerr << std::format("Error: Could not find {} process after {} attempts!\n", processName, maxAttempts);
+        std::cerr << "Make sure the target application is running.\n";
         system("pause");
         return 1;
     }
 
-    std::cout << std::format("Found ff8_en.exe (PID: {})\n", processId);
+    std::cout << std::format("Found {} (PID: {})\n", processName, processId);
     
     // Check process architecture
     bool targetIs64Bit = IsProcess64Bit(processId);

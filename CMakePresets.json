@@ -10,7 +10,8 @@
             "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_GENERATOR_PLATFORM": "Win32"
+                "CMAKE_GENERATOR_PLATFORM": "Win32",
+                "BUILD_TESTING": "ON"
             },
             "vendor": {
                 "microsoft.com/VisualStudioSettings/CMake/1.0": {

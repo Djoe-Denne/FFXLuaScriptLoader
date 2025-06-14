@@ -20,7 +20,7 @@
 #include <vector>
 #include <chrono>
 
-using namespace ff8_hook::util;
+using namespace app_hook::util;
 using namespace ::testing;
 
 namespace {

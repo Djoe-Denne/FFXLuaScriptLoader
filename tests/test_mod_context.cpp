@@ -20,7 +20,7 @@
 #include <atomic>
 #include <cstdio>
 
-using namespace ff8_hook::context;
+using namespace app_hook::context;
 using namespace ::testing;
 
 namespace {

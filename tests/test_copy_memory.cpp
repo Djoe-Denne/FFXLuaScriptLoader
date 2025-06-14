@@ -17,10 +17,10 @@
 #include <memory>
 #include <cstring>
 
-using namespace ff8_hook::memory;
-using namespace ff8_hook::config;
-using namespace ff8_hook::context;
-using namespace ff8_hook::task;
+using namespace app_hook::memory;
+using namespace app_hook::config;
+using namespace app_hook::context;
+using namespace app_hook::task;
 using namespace ::testing;
 
 namespace {

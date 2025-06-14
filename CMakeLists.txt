@@ -1,8 +1,8 @@
-# FF8 Script Loader - Main Build Configuration
-# Builds both ff8_hook (DLL) and injector (EXE) as x32 (32-bit) versions
+# Legacy Software Extension Framework - Main Build Configuration
+# Builds both app_hook (DLL) and injector (EXE) as x32 (32-bit) versions
 
 cmake_minimum_required(VERSION 3.25)
-project(FFScriptLoader VERSION 1.0.0 LANGUAGES CXX)
+project(LegacySoftwareExtension VERSION 1.0.0 LANGUAGES CXX)
 
 # Force 32-bit architecture for all targets
 set(CMAKE_GENERATOR_PLATFORM Win32)
@@ -46,10 +46,10 @@ add_compile_definitions(
     NOMINMAX
 )
 
-message(STATUS "Building FFScriptLoader components as x32 (32-bit)")
+message(STATUS "Building Legacy Software Extension Framework components as x32 (32-bit)")
 
 # Add subdirectories
-add_subdirectory(ff8_hook)
+add_subdirectory(app_hook)
 add_subdirectory(injector)
 
 # Add tests if enabled
@@ -58,13 +58,13 @@ if(BUILD_TESTING)
 endif()
 
 # Optional: Create install target
-install(TARGETS ff8_hook ff8_injector
+install(TARGETS app_hook app_injector
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
 
-message(STATUS "Configuration complete. Both ff8_hook.dll and ff8_injector.exe will be built as x32.")
+message(STATUS "Configuration complete. Both app_hook.dll and app_injector.exe will be built as x32.")
 
 # Custom target to generate compile_commands.json using PowerShell script
 add_custom_target(generate_compdb

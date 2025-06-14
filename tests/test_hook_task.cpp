@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-using namespace ff8_hook::task;
+using namespace app_hook::task;
 using namespace ::testing;
 
 namespace {
