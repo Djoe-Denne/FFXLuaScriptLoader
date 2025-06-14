@@ -26,81 +26,24 @@ public:
     /// @brief Load tasks from tasks configuration file
     /// @param tasks_config_path Path to the tasks.toml configuration file
     /// @return true if loading succeeded
-    [[nodiscard]] bool load_from_tasks_config(const std::string& tasks_config_path) {
-        auto config_result = config::ConfigLoader::load_memory_configs_from_tasks(tasks_config_path);
-        if (!config_result) {
-            return false;
-        }
-        
-        // Clear existing tasks
-        tasks_.clear();
-        
-        // Create copy memory tasks from configuration
-        for (auto&& config : *config_result) {
-            tasks_.push_back(task::make_task<memory::CopyMemoryTask>(std::move(config)));
-        }
-        
-        return true;
-    }
+    [[nodiscard]] bool load_from_tasks_config(const std::string& tasks_config_path);
 
     /// @brief Load tasks from configuration file (legacy method)
     /// @param config_path Path to the configuration file
     /// @return true if loading succeeded
-    [[nodiscard]] bool load_from_config(const std::string& config_path) {
-        auto config_result = config::ConfigLoader::load_memory_configs(config_path);
-        if (!config_result) {
-            return false;
-        }
-        
-        // Clear existing tasks
-        tasks_.clear();
-        
-        // Create copy memory tasks from configuration
-        for (auto&& config : *config_result) {
-            tasks_.push_back(task::make_task<memory::CopyMemoryTask>(std::move(config)));
-        }
-        
-        return true;
-    }
+    [[nodiscard]] bool load_from_config(const std::string& config_path);
     
     /// @brief Add a task to the manager
     /// @param task Task to add
-    void add_task(task::HookTaskPtr task) {
-        if (task) {
-            tasks_.push_back(std::move(task));
-        }
-    }
+    void add_task(task::HookTaskPtr task);
     
     /// @brief Execute all tasks
     /// @return true if all tasks succeeded
-    [[nodiscard]] bool execute_all() {
-        if (tasks_.empty()) {
-            return true;
-        }
-        
-        // Execute all tasks and collect results
-        const auto results = tasks_ 
-            | std::views::transform([](const auto& task) { return task->execute(); })
-            | std::ranges::to<std::vector>();
-        
-        // Check if all tasks succeeded
-        return std::ranges::all_of(results, [](const auto& result) { 
-            return result.has_value(); 
-        });
-    }
+    [[nodiscard]] bool execute_all();
     
     /// @brief Execute all tasks and return detailed results
     /// @return Vector of task results with names
-    [[nodiscard]] std::vector<std::pair<std::string, task::TaskResult>> execute_all_detailed() {
-        std::vector<std::pair<std::string, task::TaskResult>> results;
-        results.reserve(tasks_.size());
-        
-        for (const auto& task : tasks_) {
-            results.emplace_back(task->name(), task->execute());
-        }
-        
-        return results;
-    }
+    [[nodiscard]] std::vector<std::pair<std::string, task::TaskResult>> execute_all_detailed();
     
     /// @brief Get the number of tasks
     /// @return Number of tasks
@@ -116,16 +59,10 @@ public:
     
     /// @brief Get task names
     /// @return Vector of task names
-    [[nodiscard]] std::vector<std::string> get_task_names() const {
-        return tasks_ 
-            | std::views::transform([](const auto& task) { return task->name(); })
-            | std::ranges::to<std::vector>();
-    }
+    [[nodiscard]] std::vector<std::string> get_task_names() const;
     
     /// @brief Clear all tasks
-    void clear() noexcept {
-        tasks_.clear();
-    }
+    void clear() noexcept;
     
 private:
     std::vector<task::HookTaskPtr> tasks_;

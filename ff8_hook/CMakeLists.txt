@@ -59,9 +59,15 @@ set(SOURCES
     src/dllmain.cpp
     src/context/mod_context.cpp
     src/memory/copy_memory.cpp
+    src/memory/patch_memory.cpp
     src/config/config_loader.cpp
-    src/config/task_loader.cpp
+    src/config/task_loader.cpp  
+    src/config/copy_memory_loader.cpp
+    src/config/patch_loader.cpp
+    src/config/config_factory.cpp
     src/hook/hook_manager.cpp
+    src/hook/hook_factory.cpp
+    src/util/task_manager.cpp
 )
 
 # Create ff8_hook.dll

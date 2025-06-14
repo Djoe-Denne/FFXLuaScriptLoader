@@ -19,6 +19,9 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Generate compile_commands.json for IDE support
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Enable testing
 option(BUILD_TESTING "Build tests" ON)
 if(BUILD_TESTING)
@@ -61,4 +64,14 @@ install(TARGETS ff8_hook ff8_injector
     ARCHIVE DESTINATION lib
 )
 
-message(STATUS "Configuration complete. Both ff8_hook.dll and ff8_injector.exe will be built as x32.") 
+message(STATUS "Configuration complete. Both ff8_hook.dll and ff8_injector.exe will be built as x32.")
+
+# Custom target to generate compile_commands.json using PowerShell script
+add_custom_target(generate_compdb
+    COMMAND powershell.exe -ExecutionPolicy Bypass -File "${CMAKE_SOURCE_DIR}/generate_compile_commands.ps1"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generating compile_commands.json for IDE support"
+    VERBATIM
+)
+
+message(STATUS "Added 'generate_compdb' target. Run 'cmake --build . --target generate_compdb' to generate compile_commands.json") 
