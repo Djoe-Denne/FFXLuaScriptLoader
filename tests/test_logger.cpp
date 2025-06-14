@@ -11,7 +11,7 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "util/logger.hpp"
+#include <util/logger.hpp>
 #include <filesystem>
 #include <fstream>
 #include <spdlog/spdlog.h>

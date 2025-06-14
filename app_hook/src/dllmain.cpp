@@ -1,15 +1,19 @@
 #include <Windows.h>
 #include <string>
-#include "hook/hook_manager.hpp"
-#include "hook/hook_factory.hpp"
-#include "util/logger.hpp"
+#include <hook/hook_manager.hpp>
+#include <hook/hook_factory.hpp>
+#include <util/logger.hpp>
+#include <plugin/plugin_manager.hpp>
 
 // Global hook manager
 app_hook::hook::HookManager g_hook_manager;
 
+// Global plugin manager
+app_hook::plugin::PluginManager g_plugin_manager;
+
 void InstallHooks() {
     // Initialize logging first
-    if (!app_hook::util::initialize_logging("logs/app_hook.log", spdlog::level::debug)) {
+    if (!app_hook::util::initialize_logging("logs/app_hook.log", 1)) {  // 1 = debug level
         MessageBoxA(NULL, "Failed to initialize logging system", "Logger Error", MB_OK);
         return;
     }
@@ -20,10 +24,33 @@ void InstallHooks() {
     LOG_INFO("Thread ID: {}", GetCurrentThreadId());
     LOG_INFO("================================");
     
-    // Add a small delay to ensure the process is fully loaded
-    Sleep(100);
-    
     LOG_INFO("Initializing hook system...");
+    
+    // Initialize plugin system
+    LOG_INFO("Initializing plugin system...");
+    auto config_registry = [&](std::shared_ptr<app_hook::config::ConfigBase> config) {
+        // Register configuration with the hook system
+        // This would typically be integrated with the existing configuration system
+        LOG_INFO("Plugin registered configuration: {} ({})", config->key(), config->name());
+    };
+    
+    if (auto result = g_plugin_manager.initialize("data", std::move(config_registry)); result != app_hook::plugin::PluginResult::Success) {
+        LOG_ERROR("Failed to initialize plugin manager");
+        MessageBoxA(NULL, "Failed to initialize plugin manager\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+        return;
+    }
+    
+    // Load plugins from tasks directory
+    LOG_INFO("Loading plugins from directory: mods/xtender/tasks/");
+    const auto loaded_plugins = g_plugin_manager.load_plugins_from_directory("mods/xtender/tasks");
+    LOG_INFO("Loaded {} plugin(s)", loaded_plugins);
+    
+    // Initialize plugins with configuration
+    if (auto result = g_plugin_manager.initialize_plugins("config"); result != app_hook::plugin::PluginResult::Success) {
+        LOG_ERROR("Failed to initialize plugins");
+        MessageBoxA(NULL, "Failed to initialize plugins\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
+        return;
+    }
     
     // Load configuration and create hooks
     const std::string tasks_config_path = "config/tasks.toml";
@@ -63,6 +90,11 @@ void InstallHooks() {
 void UninstallHooks() {
     LOG_INFO("Uninstalling hooks...");
     g_hook_manager.uninstall_all();
+    
+    // Unload plugins
+    LOG_INFO("Unloading plugins...");
+    g_plugin_manager.unload_all_plugins();
+    
     LOG_INFO("Application Hook DLL shutting down");
     
     // Shutdown logging system
@@ -73,7 +105,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     switch (reason) {
         case DLL_PROCESS_ATTACH: {
             // Quick logging initialization for DllMain logging
-            app_hook::util::initialize_logging("logs/app_hook.log", spdlog::level::debug);
+            app_hook::util::initialize_logging("logs/app_hook.log", 1);  // 1 = debug level
             
             LOG_INFO("DLL_PROCESS_ATTACH - DLL loaded into process");
             LOG_INFO("Module handle: 0x{:X}", reinterpret_cast<uintptr_t>(hModule));

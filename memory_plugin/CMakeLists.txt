@@ -1,6 +1,6 @@
-# Application Hook Module (x32 DLL)
+# Memory Operations Plugin (x32 DLL)
 cmake_minimum_required(VERSION 3.25)
-project(AppHook VERSION 1.0.0 LANGUAGES CXX)
+project(MemoryPlugin VERSION 1.0.0 LANGUAGES CXX)
 
 # Force 32-bit architecture
 set(CMAKE_GENERATOR_PLATFORM Win32)
@@ -17,7 +17,7 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Output directories
+# Output directories - put tasks in bin/<mode>/tasks/
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # MSVC settings for x32
@@ -28,35 +28,44 @@ endif()
 
 # Dependencies are now handled by core_hook
 
-# Source files (app_hook specific only - shared functionality is in core_hook)
+# Source files
 set(SOURCES 
-    src/dllmain.cpp
+    src/memory_plugin.cpp
+    src/memory_config_loader.cpp
 )
 
-# Create app_hook.dll
-add_library(app_hook SHARED ${SOURCES})
+# Create memory_plugin.dll
+add_library(memory_plugin SHARED ${SOURCES})
 
-set_target_properties(app_hook PROPERTIES
-    OUTPUT_NAME "app_hook"
+set_target_properties(memory_plugin PROPERTIES
+    OUTPUT_NAME "memory_plugin"
     PREFIX ""
     SUFFIX ".dll"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/Debug/tasks"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release/tasks"
 )
 
-# Include directories (core_hook provides all headers)
-# target_include_directories not needed - core_hook provides all includes
+# Include directories
+target_include_directories(memory_plugin PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 # Link libraries
-target_link_libraries(app_hook PRIVATE 
+target_link_libraries(memory_plugin PRIVATE 
     core_hook       # Our shared static library
     kernel32
     user32
 )
 
 # Definitions
-target_compile_definitions(app_hook PRIVATE 
+target_compile_definitions(memory_plugin PRIVATE 
     WIN32_LEAN_AND_MEAN
     NOMINMAX
+    MEMORY_PLUGIN_EXPORTS
 )
 
 # Install
-install(TARGETS app_hook RUNTIME DESTINATION bin) 
+install(TARGETS memory_plugin 
+    RUNTIME DESTINATION bin/tasks
+    COMPONENT TaskPlugins
+) 

@@ -283,14 +283,15 @@ int main(int argc, char* argv[]) {
     
     std::cout << std::format("\nInjecting DLL: {}\n", dllPathStr);
 
-    if (InjectDLL(processId, dllPathStr)) {
-        std::cout << "\nDLL injection successful!\n";
-        std::cout << "Check memory_hook_log.txt for detailed logs.\n";
-    } else {
+    if (!InjectDLL(processId, dllPathStr)) {
         std::cerr << "\nDLL injection failed!\n";
         system("pause");
         return 1;
     }
+
+    std::cout << "\nDLL injection successful!\n";
+    std::cout << "The injected DLL will handle plugin loading using its plugin manager.\n";
+    std::cout << "Check logs/app_hook.log for detailed logs.\n";
 
     system("pause");
     return 0;

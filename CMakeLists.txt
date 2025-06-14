@@ -49,16 +49,19 @@ add_compile_definitions(
 message(STATUS "Building Legacy Software Extension Framework components as x32 (32-bit)")
 
 # Add subdirectories
+add_subdirectory(core_hook)     # Shared static library
 add_subdirectory(app_hook)
 add_subdirectory(injector)
+add_subdirectory(memory_plugin)
 
 # Add tests if enabled
 if(BUILD_TESTING)
     add_subdirectory(tests)
+    add_subdirectory(integration-test)
 endif()
 
 # Optional: Create install target
-install(TARGETS app_hook app_injector
+install(TARGETS app_hook app_injector memory_plugin
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

@@ -42,28 +42,7 @@ FetchContent_MakeAvailable(googletest)
 # Include Google Test's cmake utilities
 include(GoogleTest)
 
-# Fetch dependencies needed for tests (same as main project)
-FetchContent_Declare(
-    minhook
-    GIT_REPOSITORY https://github.com/TsudaKageyu/minhook.git
-    GIT_TAG master
-)
-
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.12.0
-)
-
-FetchContent_Declare(
-    tomlplusplus
-    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
-    GIT_TAG v3.4.0
-)
-
-set(MINHOOK_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-
-FetchContent_MakeAvailable(minhook spdlog tomlplusplus)
+# Dependencies are now handled by core_hook
 
 # Test source files
 set(TEST_SOURCES
@@ -76,24 +55,21 @@ set(TEST_SOURCES
     main.cpp
 )
 
-# Create test executable
+# Create test executable (core_hook provides all functionality)
 add_executable(app_hook_tests ${TEST_SOURCES})
 
 # Include directories
 target_include_directories(app_hook_tests PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../app_hook/include
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Link libraries
 target_link_libraries(app_hook_tests PRIVATE
+    core_hook       # Our shared static library
     gtest
     gtest_main
     gmock
     gmock_main
-    spdlog::spdlog
-    tomlplusplus::tomlplusplus
-    minhook
     kernel32
     user32
 )
