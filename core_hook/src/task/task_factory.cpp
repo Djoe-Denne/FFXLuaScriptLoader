@@ -1,6 +1,8 @@
-#include "../../include/task/task_factory.hpp"
-#include "../../include/util/logger.hpp"
+#include "../include/task/task_factory.hpp"
+#include "../include/util/logger.hpp"
 #include <algorithm>
+#include <string>
+#include <typeinfo>
 
 namespace app_hook::task {
 
@@ -8,6 +10,11 @@ TaskFactory& TaskFactory::instance() {
     static TaskFactory instance;
     LOG_DEBUG("TaskFactory::instance() returning singleton at address: 0x{:X}", reinterpret_cast<uintptr_t>(&instance));
     return instance;
+}
+
+void TaskFactory::set_plugin_host(app_hook::plugin::IPluginHost* host) {
+    plugin_host_ = host;
+    LOG_DEBUG("TaskFactory::set_plugin_host called with host: 0x{:X}", reinterpret_cast<uintptr_t>(host));
 }
 
 bool TaskFactory::register_task_creator(const std::string& config_type_name, TaskCreatorFunc creator) {
@@ -49,7 +56,12 @@ HookTaskPtr TaskFactory::create_task(const config::ConfigBase& config) {
     auto it = creators_.find(config_type);
     if (it != creators_.end()) {
         LOG_DEBUG("Creating task using exact type match for: {}", config_type);
-        return it->second(config);
+        auto task = it->second(config);
+        if (task && plugin_host_) {
+            task->setHost(plugin_host_);
+            LOG_DEBUG("Applied plugin host to newly created task");
+        }
+        return task;
     }
     LOG_DEBUG("No exact match found for: {}", config_type);
 
@@ -60,6 +72,10 @@ HookTaskPtr TaskFactory::create_task(const config::ConfigBase& config) {
             LOG_DEBUG("Creating task using partial type match '{}' for: {}", registered_type, config_type);
             auto task = creator(config);
             if (task) {
+                if (plugin_host_) {
+                    task->setHost(plugin_host_);
+                    LOG_DEBUG("Applied plugin host to newly created task");
+                }
                 return task;
             } else {
                 LOG_WARNING("Task creator returned nullptr for type: {}", registered_type);

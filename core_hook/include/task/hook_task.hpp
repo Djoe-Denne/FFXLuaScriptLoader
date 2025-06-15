@@ -48,6 +48,10 @@ public:
     /// @return Task description
     [[nodiscard]] virtual std::string description() const = 0;
     
+    /// @brief Set the plugin host for logging (default implementation does nothing)
+    /// @param host Plugin host to use for logging
+    virtual void setHost(void* host) {}
+    
 protected:
     IHookTask() = default;
     IHookTask(const IHookTask&) = default;

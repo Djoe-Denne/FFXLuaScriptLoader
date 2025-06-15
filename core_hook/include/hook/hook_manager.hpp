@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../task/hook_task.hpp"
+#include "../util/logger.hpp"
 #include <MinHook.h>
 #include <unordered_map>
 #include <vector>
@@ -52,12 +53,24 @@ public:
     
     /// @brief Execute all tasks chained to this hook
     void execute_tasks() {
-        for (const auto& task : tasks_) {
+        LOG_DEBUG("Hook at 0x{:X}: Executing {} task(s)", address_, tasks_.size());
+        
+        for (size_t i = 0; i < tasks_.size(); ++i) {
+            const auto& task = tasks_[i];
+            LOG_DEBUG("Hook at 0x{:X}: Executing task {} of {}: '{}'", 
+                     address_, i + 1, tasks_.size(), task->name());
+            
             if (auto result = task->execute(); !result) {
+                LOG_ERROR("Hook at 0x{:X}: Task '{}' failed with error code: {}", 
+                         address_, task->name(), static_cast<int>(result.error()));
                 // Log error but continue with other tasks
-                // Could add error handling/logging here
+            } else {
+                LOG_DEBUG("Hook at 0x{:X}: Task '{}' completed successfully", 
+                         address_, task->name());
             }
         }
+        
+        LOG_DEBUG("Hook at 0x{:X}: Completed execution of all {} task(s)", address_, tasks_.size());
     }
     
     /// @brief Get the hook address

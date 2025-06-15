@@ -4,6 +4,9 @@
 #include "../../core_hook/include/task/hook_task.hpp"
 #include "../../core_hook/include/context/mod_context.hpp"
 
+// Forward declaration
+namespace app_hook::plugin { class IPluginHost; }
+
 namespace app_hook::memory {
 
 // Use the config structure from the config namespace
@@ -15,7 +18,15 @@ public:
     /// @brief Construct a memory copy task
     /// @param config Configuration for the copy operation
     explicit CopyMemoryTask(CopyMemoryConfig config) noexcept
-        : config_(std::move(config)) {}
+        : config_(std::move(config)), host_(nullptr) {}
+    
+    /// @brief Set the plugin host for logging
+    void setHost(app_hook::plugin::IPluginHost* host) { host_ = host; }
+    
+    /// @brief Set the plugin host for logging (base interface override)
+    void setHost(void* host) override { 
+        host_ = static_cast<app_hook::plugin::IPluginHost*>(host); 
+    }
     
     /// @brief Execute the memory copy operation
     /// @return Task result indicating success or failure
@@ -35,6 +46,8 @@ public:
                std::to_string(config_.new_size()) + " bytes";
     }
     
+
+    
     /// @brief Get the configuration
     /// @return Copy memory configuration
     [[nodiscard]] const CopyMemoryConfig& config() const noexcept {
@@ -43,6 +56,7 @@ public:
     
 private:
     CopyMemoryConfig config_;
+    app_hook::plugin::IPluginHost* host_ = nullptr;
 };
 
 } // namespace app_hook::memory

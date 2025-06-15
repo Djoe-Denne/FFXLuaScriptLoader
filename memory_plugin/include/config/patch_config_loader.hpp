@@ -9,6 +9,9 @@
 #include <algorithm>
 #include <optional>
 
+// Forward declaration
+namespace app_hook::plugin { class IPluginHost; }
+
 namespace memory_plugin {
 
 /// @brief Patch operations configuration loader
@@ -17,6 +20,9 @@ class PatchConfigLoader : public app_hook::config::ConfigLoaderBase {
 public:
     PatchConfigLoader() = default;
     ~PatchConfigLoader() override = default;
+
+    /// @brief Set the plugin host for logging
+    void setHost(app_hook::plugin::IPluginHost* host) { host_ = host; }
 
     // ConfigLoaderBase interface
     std::vector<app_hook::config::ConfigType> supported_types() const override;
@@ -47,6 +53,9 @@ private:
 
     /// @brief Parse offset string like "0x2A" or "-0x10"
     static std::int32_t parse_offset(const std::string& offset_str);
+
+    /// @brief Plugin host for logging
+    app_hook::plugin::IPluginHost* host_ = nullptr;
 };
 
 } // namespace memory_plugin 

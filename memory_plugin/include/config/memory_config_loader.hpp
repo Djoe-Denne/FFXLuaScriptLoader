@@ -6,6 +6,9 @@
 #include <optional>
 #include <toml++/toml.hpp>
 
+// Forward declaration
+namespace app_hook::plugin { class IPluginHost; }
+
 namespace memory_plugin {
 
 /// @brief Memory operations configuration loader
@@ -14,6 +17,9 @@ class MemoryConfigLoader : public app_hook::config::ConfigLoaderBase {
 public:
     MemoryConfigLoader() = default;
     ~MemoryConfigLoader() override = default;
+
+    /// @brief Set the plugin host for logging
+    void setHost(app_hook::plugin::IPluginHost* host) { host_ = host; }
 
     // ConfigLoaderBase interface
     std::vector<app_hook::config::ConfigType> supported_types() const override;
@@ -37,6 +43,9 @@ private:
 
     /// @brief Parse address string (supports hex format)
     static std::uintptr_t parse_address(const std::string& value);
+
+    /// @brief Plugin host for logging
+    app_hook::plugin::IPluginHost* host_ = nullptr;
 };
 
 } // namespace memory_plugin 

@@ -3,6 +3,7 @@
 #include "../include/config/patch_config_loader.hpp"
 #include "../include/memory/copy_memory.hpp"
 #include "../include/memory/patch_memory.hpp"
+#include "task/task_factory.hpp"
 #include <filesystem>
 #include <string>
 #include <format>
@@ -35,6 +36,7 @@ public:
         
         // Register memory config loader
         auto memory_loader = std::make_unique<MemoryConfigLoader>();
+        memory_loader->setHost(host_); // Set host for logging
         auto memory_result = host_->register_config_loader(std::move(memory_loader));
         if (memory_result != app_hook::plugin::PluginResult::Success) {
             PLUGIN_LOG_ERROR("Memory Plugin: Failed to register memory config loader");
@@ -44,6 +46,7 @@ public:
         
         // Register patch config loader
         auto patch_loader = std::make_unique<PatchConfigLoader>();
+        patch_loader->setHost(host_); // Set host for logging
         auto patch_result = host_->register_config_loader(std::move(patch_loader));
         if (patch_result != app_hook::plugin::PluginResult::Success) {
             PLUGIN_LOG_ERROR("Memory Plugin: Failed to register patch config loader");
@@ -51,7 +54,11 @@ public:
         }
         PLUGIN_LOG_INFO("Memory Plugin: Patch config loader registered successfully");
         
-        // Register task creators through host interface
+        // Set the plugin host on the TaskFactory so newly created tasks get it automatically
+        app_hook::task::TaskFactory::instance().set_plugin_host(host_);
+        PLUGIN_LOG_DEBUG("Memory Plugin: Set plugin host on TaskFactory");
+        
+        // Register task creators (back to original approach)
         PLUGIN_LOG_INFO("Memory Plugin: Registering task creators...");
         
         // Register CopyMemoryTask creator

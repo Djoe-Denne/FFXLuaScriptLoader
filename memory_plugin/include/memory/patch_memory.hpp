@@ -9,6 +9,9 @@
 #include <vector>
 #include <windows.h>
 
+// Forward declaration
+namespace app_hook::plugin { class IPluginHost; }
+
 namespace app_hook::memory {
 
 /// @brief Use instruction patch from config namespace
@@ -24,7 +27,15 @@ public:
     /// @param config Configuration for the patch operation
     /// @param patches Pre-parsed instruction patches
     PatchMemoryTask(PatchConfig config, std::vector<InstructionPatch> patches) noexcept
-        : config_(std::move(config)), patches_(std::move(patches)) {}
+        : config_(std::move(config)), patches_(std::move(patches)), host_(nullptr) {}
+    
+    /// @brief Set the plugin host for logging
+    void setHost(app_hook::plugin::IPluginHost* host) { host_ = host; }
+    
+    /// @brief Set the plugin host for logging (base interface override)
+    void setHost(void* host) override { 
+        host_ = static_cast<app_hook::plugin::IPluginHost*>(host); 
+    }
     
     /// @brief Execute the memory patch operation
     /// @return Task result indicating success or failure
@@ -37,6 +48,8 @@ public:
     /// @brief Get the task description
     /// @return Task description
     [[nodiscard]] std::string description() const override;
+    
+
     
     /// @brief Get the configuration
     /// @return Patch configuration
@@ -53,6 +66,7 @@ public:
 private:
     PatchConfig config_;
     std::vector<InstructionPatch> patches_;
+    app_hook::plugin::IPluginHost* host_ = nullptr;
     
     /// @brief Apply a single instruction patch
     /// @param patch Patch to apply
