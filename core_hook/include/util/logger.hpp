@@ -2,6 +2,7 @@
 
 #include <string>
 #include <format>
+#include <spdlog/spdlog.h>
 
 namespace app_hook::util {
 
@@ -24,21 +25,13 @@ bool initialize_logging(const std::string& log_file_path, int level = 2);
 /// @brief Close logging system
 void shutdown_logging();
 
-/// @brief Logging wrapper functions (implemented in logger.cpp)
-void log_trace(const std::string& message);
-void log_debug(const std::string& message);
-void log_info(const std::string& message);
-void log_warn(const std::string& message);
-void log_error(const std::string& message);
-void log_critical(const std::string& message);
-
 } // namespace app_hook::util
 
-/// @brief Convenient logging macros that don't require spdlog
-#define LOG_TRACE(...) app_hook::util::log_trace(std::format(__VA_ARGS__))
-#define LOG_DEBUG(...) app_hook::util::log_debug(std::format(__VA_ARGS__))
-#define LOG_INFO(...) app_hook::util::log_info(std::format(__VA_ARGS__))
-#define LOG_WARN(...) app_hook::util::log_warn(std::format(__VA_ARGS__))
-#define LOG_WARNING(...) app_hook::util::log_warn(std::format(__VA_ARGS__))  // Alias for compatibility
-#define LOG_ERROR(...) app_hook::util::log_error(std::format(__VA_ARGS__))
-#define LOG_CRITICAL(...) app_hook::util::log_critical(std::format(__VA_ARGS__))
+/// @brief Convenient logging macros that capture source location
+#define LOG_TRACE(...) SPDLOG_TRACE(std::format(__VA_ARGS__))
+#define LOG_DEBUG(...) SPDLOG_DEBUG(std::format(__VA_ARGS__))
+#define LOG_INFO(...) SPDLOG_INFO(std::format(__VA_ARGS__))
+#define LOG_WARN(...) SPDLOG_WARN(std::format(__VA_ARGS__))
+#define LOG_WARNING(...) SPDLOG_WARN(std::format(__VA_ARGS__))  // Alias for compatibility
+#define LOG_ERROR(...) SPDLOG_ERROR(std::format(__VA_ARGS__))
+#define LOG_CRITICAL(...) SPDLOG_CRITICAL(std::format(__VA_ARGS__))

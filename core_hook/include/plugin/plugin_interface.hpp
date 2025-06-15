@@ -5,6 +5,7 @@
 #include <memory>
 #include <functional>
 #include <cstdint>
+#include <source_location>
 
 // Include the actual headers for config types  
 #include "config/config_base.hpp"
@@ -81,6 +82,12 @@ public:
     /// @param message Message to log
     virtual void log_message(int level, const std::string& message) = 0;
 
+    /// @brief Log a message through the host's logging system with source location
+    /// @param level Log level (0=trace, 1=debug, 2=info, 3=warn, 4=error, 5=critical)
+    /// @param message Message to log
+    /// @param location Source location information
+    virtual void log_message_with_location(int level, const std::string& message, const std::source_location& location) = 0;
+
     /// @brief Get current process information
     /// @return Process handle and ID
     virtual std::pair<void*, std::uint32_t> get_process_info() const = 0;
@@ -141,9 +148,9 @@ using DestroyPluginFunc = void(*)(IPlugin*);
 
 /// @brief Plugin logging macros - use these in plugins to log through host
 /// @note These require a 'host_' member variable of type IPluginHost*
-#define PLUGIN_LOG_TRACE(...)   if (host_) host_->log_message(0, std::format(__VA_ARGS__))
-#define PLUGIN_LOG_DEBUG(...)   if (host_) host_->log_message(1, std::format(__VA_ARGS__))
-#define PLUGIN_LOG_INFO(...)    if (host_) host_->log_message(2, std::format(__VA_ARGS__))
-#define PLUGIN_LOG_WARN(...)    if (host_) host_->log_message(3, std::format(__VA_ARGS__))
-#define PLUGIN_LOG_ERROR(...)   if (host_) host_->log_message(4, std::format(__VA_ARGS__))
-#define PLUGIN_LOG_CRITICAL(...) if (host_) host_->log_message(5, std::format(__VA_ARGS__)) 
+#define PLUGIN_LOG_TRACE(...)   if (host_) host_->log_message_with_location(0, std::format(__VA_ARGS__), std::source_location::current())
+#define PLUGIN_LOG_DEBUG(...)   if (host_) host_->log_message_with_location(1, std::format(__VA_ARGS__), std::source_location::current())
+#define PLUGIN_LOG_INFO(...)    if (host_) host_->log_message_with_location(2, std::format(__VA_ARGS__), std::source_location::current())
+#define PLUGIN_LOG_WARN(...)    if (host_) host_->log_message_with_location(3, std::format(__VA_ARGS__), std::source_location::current())
+#define PLUGIN_LOG_ERROR(...)   if (host_) host_->log_message_with_location(4, std::format(__VA_ARGS__), std::source_location::current())
+#define PLUGIN_LOG_CRITICAL(...) if (host_) host_->log_message_with_location(5, std::format(__VA_ARGS__), std::source_location::current()) 

@@ -85,6 +85,24 @@ void PluginHost::log_message(int level, const std::string& message) {
     }
 }
 
+void PluginHost::log_message_with_location(int level, const std::string& message, const std::source_location& location) {
+    // Map plugin log levels to spdlog levels
+    spdlog::level::level_enum spdlog_level;
+    switch (level) {
+        case 0: spdlog_level = spdlog::level::trace; break;
+        case 1: spdlog_level = spdlog::level::debug; break;
+        case 2: spdlog_level = spdlog::level::info; break;
+        case 3: spdlog_level = spdlog::level::warn; break;
+        case 4: spdlog_level = spdlog::level::err; break;
+        case 5: spdlog_level = spdlog::level::critical; break;
+        default: spdlog_level = spdlog::level::info; break;
+    }
+    
+    // Log directly with spdlog using the provided source location
+    spdlog::default_logger_raw()->log(spdlog::source_loc{location.file_name(), static_cast<int>(location.line()), location.function_name()}, 
+                                       spdlog_level, message);
+}
+
 std::pair<void*, std::uint32_t> PluginHost::get_process_info() const {
     return {GetCurrentProcess(), GetCurrentProcessId()};
 }

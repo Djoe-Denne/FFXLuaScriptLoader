@@ -50,8 +50,8 @@ bool initialize_logging(const std::string& log_file_path, int level) {
         // Set global log level as well (just to be sure)
         spdlog::set_level(spdlog_level);
         
-        spdlog::info("FF8 Hook logging system initialized with level: {}", spdlog::level::to_string_view(spdlog_level));
-        spdlog::debug("Debug logging test - this should appear if debug level is active");
+        SPDLOG_INFO("FF8 Hook logging system initialized with level: {}", spdlog::level::to_string_view(spdlog_level));
+        SPDLOG_DEBUG("Debug logging test - this should appear if debug level is active");
         return true;
         
     } catch (const std::exception&) {
@@ -60,33 +60,8 @@ bool initialize_logging(const std::string& log_file_path, int level) {
 }
 
 void shutdown_logging() {
-    spdlog::info("FF8 Hook logging system shutting down");
+    SPDLOG_INFO("FF8 Hook logging system shutting down");
     spdlog::shutdown();
-}
-
-// Wrapper functions for logging that don't expose spdlog
-void log_trace(const std::string& message) {
-    spdlog::trace(message);
-}
-
-void log_debug(const std::string& message) {
-    spdlog::debug(message);
-}
-
-void log_info(const std::string& message) {
-    spdlog::info(message);
-}
-
-void log_warn(const std::string& message) {
-    spdlog::warn(message);
-}
-
-void log_error(const std::string& message) {
-    spdlog::error(message);
-}
-
-void log_critical(const std::string& message) {
-    spdlog::critical(message);
 }
 
 } // namespace app_hook::util 

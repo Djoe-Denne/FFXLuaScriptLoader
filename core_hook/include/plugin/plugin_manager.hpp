@@ -47,6 +47,7 @@ public:
                                         std::function<std::unique_ptr<::app_hook::task::IHookTask>(const ::app_hook::config::ConfigBase&)> creator) override;
     std::string get_plugin_data_path() const override;
     void log_message(int level, const std::string& message) override;
+    void log_message_with_location(int level, const std::string& message, const std::source_location& location) override;
     std::pair<void*, std::uint32_t> get_process_info() const override;
     ::app_hook::context::ModContext& get_mod_context() override;
 
