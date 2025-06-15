@@ -30,6 +30,8 @@ public:
         , new_size_(other.new_size_) {
         set_description(other.description());
         set_enabled(other.enabled());
+        set_write_in_context(other.write_in_context());
+        set_read_from_context(other.read_from_context());
     }
 
     /// @brief Default destructor

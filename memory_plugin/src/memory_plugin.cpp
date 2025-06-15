@@ -54,9 +54,7 @@ public:
         }
         PLUGIN_LOG_INFO("Memory Plugin: Patch config loader registered successfully");
         
-        // Set the plugin host on the TaskFactory so newly created tasks get it automatically
-        app_hook::task::TaskFactory::instance().set_plugin_host(host_);
-        PLUGIN_LOG_DEBUG("Memory Plugin: Set plugin host on TaskFactory");
+        // Task creators will capture host_ and set it directly on created tasks
         
         // Register task creators (back to original approach)
         PLUGIN_LOG_INFO("Memory Plugin: Registering task creators...");
@@ -64,9 +62,11 @@ public:
         // Register CopyMemoryTask creator
         auto memory_creator_result = host_->register_task_creator(
             "app_hook::config::CopyMemoryConfig",
-            [](const app_hook::config::ConfigBase& base_config) -> std::unique_ptr<app_hook::task::IHookTask> {
+            [this](const app_hook::config::ConfigBase& base_config) -> std::unique_ptr<app_hook::task::IHookTask> {
                 if (const auto* memory_config = dynamic_cast<const app_hook::config::CopyMemoryConfig*>(&base_config)) {
-                    return app_hook::task::make_task<app_hook::memory::CopyMemoryTask>(*memory_config);
+                    auto task = app_hook::task::make_task<app_hook::memory::CopyMemoryTask>(*memory_config);
+                    task->setHost(host_);
+                    return task;
                 }
                 return nullptr;
             }
@@ -81,11 +81,13 @@ public:
         // Register PatchMemoryTask creator
         auto patch_creator_result = host_->register_task_creator(
             "app_hook::config::PatchConfig",
-            [](const app_hook::config::ConfigBase& base_config) -> std::unique_ptr<app_hook::task::IHookTask> {
+            [this](const app_hook::config::ConfigBase& base_config) -> std::unique_ptr<app_hook::task::IHookTask> {
                 if (const auto* patch_config = dynamic_cast<const app_hook::config::PatchConfig*>(&base_config)) {
                     // Extract instructions from the patch config
                     const auto& instructions = patch_config->instructions();
-                    return app_hook::task::make_task<app_hook::memory::PatchMemoryTask>(*patch_config, instructions);
+                    auto task = app_hook::task::make_task<app_hook::memory::PatchMemoryTask>(*patch_config, instructions);
+                    task->setHost(host_);
+                    return task;
                 }
                 return nullptr;
             }

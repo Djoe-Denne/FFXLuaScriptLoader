@@ -1,4 +1,5 @@
 #include "../include/memory/copy_memory.hpp"
+#include "../include/memory/memory_region.hpp"
 #include "../../core_hook/include/task/hook_task.hpp"
 #include "../../core_hook/include/context/mod_context.hpp"
 #include "plugin/plugin_interface.hpp"
@@ -20,10 +21,8 @@ task::TaskResult CopyMemoryTask::execute() {
         }
         
         try {
-            PLUGIN_LOG_DEBUG("Creating memory region for key '{}'", config_.key());
-            
             // Create new memory region
-            app_hook::context::MemoryRegion region{
+            MemoryRegion region{
                 config_.new_size(), 
                 config_.address(), 
                 config_.description()
@@ -48,12 +47,35 @@ task::TaskResult CopyMemoryTask::execute() {
                 std::fill_n(region.data.get() + config_.original_size(), expanded_size, std::uint8_t{0});
             }
             
-            // Log content before moving the region
-            PLUGIN_LOG_DEBUG("Copied content: {}", region.to_string(50, 100));
+            // Log content before storing the region
+            PLUGIN_LOG_DEBUG("Copied content: {}", region.to_string(0, 100));
             
-            // Store in context
-            PLUGIN_LOG_DEBUG("Storing memory region '{}' in context", config_.key());
-            app_hook::context::ModContext::instance().store_memory_region(config_.key(), std::move(region));
+            // Store in context using the configured key
+            if (!config_.writes_to_context()) {
+                PLUGIN_LOG_ERROR("CopyMemoryTask '{}' is not configured to write to context", config_.key());
+                return std::unexpected(task::TaskError::invalid_config);
+            }
+            
+            const std::string context_key = config_.write_in_context().name;
+            if (context_key.empty()) {
+                PLUGIN_LOG_ERROR("CopyMemoryTask '{}' has empty context key name", config_.key());
+                return std::unexpected(task::TaskError::invalid_config);
+            }
+            
+            PLUGIN_LOG_DEBUG("Using configured context key: '{}'", context_key);
+            
+            // Debug: Log the write context configuration details
+            PLUGIN_LOG_DEBUG("WriteInContext config - enabled: {}, name: '{}'", 
+                           config_.write_in_context().enabled, config_.write_in_context().name);
+            
+            PLUGIN_LOG_DEBUG("Storing memory region '{}' in context", context_key);
+            if (host_) {
+                host_->get_mod_context().store_data(context_key, std::move(region));
+            } else {
+                // Fallback to singleton for backward compatibility
+                PLUGIN_LOG_WARN("Using singleton ModContext for backward compatibility");
+                app_hook::context::ModContext::instance().store_data(context_key, std::move(region));
+            }
             
             PLUGIN_LOG_INFO("Successfully executed CopyMemoryTask for key '{}'", config_.key());
             return {};

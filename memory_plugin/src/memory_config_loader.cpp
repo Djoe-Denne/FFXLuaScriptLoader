@@ -128,81 +128,87 @@ app_hook::config::ConfigPtr MemoryConfigLoader::parse_memory_operation(const tom
         auto* memory_config = static_cast<app_hook::config::CopyMemoryConfig*>(config.get());
 
         // Parse required fields
-        if (auto address_node = table.get("address")) {
-            if (address_node->is_string()) {
-                auto address = parse_address(address_node->as_string()->get());
-                PLUGIN_LOG_DEBUG("MemoryConfigLoader: Parsed address: 0x{:X}", address);
-                memory_config->set_address(address);
-            } else {
-                PLUGIN_LOG_ERROR("MemoryConfigLoader: Invalid address field type in memory operation: {}", name);
-                return nullptr;
-            }
-        } else {
-            PLUGIN_LOG_ERROR("MemoryConfigLoader: Missing address field in memory operation: {}", name);
+        auto address_node = table.get("address");
+        if (!address_node || !address_node->is_string()) {
+            PLUGIN_LOG_ERROR("MemoryConfigLoader: Missing or invalid address field");
             return nullptr;
         }
+        memory_config->set_address(parse_address(address_node->as_string()->get()));
 
-        if (auto copy_after_node = table.get("copyAfter")) {
-            if (copy_after_node->is_string()) {
-                auto copy_after = parse_address(copy_after_node->as_string()->get());
-                PLUGIN_LOG_DEBUG("MemoryConfigLoader: Parsed copyAfter: 0x{:X}", copy_after);
-                memory_config->set_copy_after(copy_after);
-            } else {
-                PLUGIN_LOG_ERROR("MemoryConfigLoader: Invalid copyAfter field type in memory operation: {}", name);
-                return nullptr;
-            }
-        } else {
-            PLUGIN_LOG_ERROR("MemoryConfigLoader: Missing copyAfter field in memory operation: {}", name);
+        auto original_size_node = table.get("originalSize");
+        if (!original_size_node || !original_size_node->is_integer()) {
+            PLUGIN_LOG_ERROR("MemoryConfigLoader: Missing or invalid originalSize field");
             return nullptr;
         }
+        memory_config->set_original_size(original_size_node->as_integer()->get());
 
-        if (auto original_size_node = table.get("originalSize")) {
-            if (original_size_node->is_integer()) {
-                auto original_size = static_cast<std::size_t>(original_size_node->as_integer()->get());
-                PLUGIN_LOG_DEBUG("MemoryConfigLoader: Parsed originalSize: {}", original_size);
-                memory_config->set_original_size(original_size);
-            } else {
-                PLUGIN_LOG_ERROR("MemoryConfigLoader: Invalid originalSize field type in memory operation: {}", name);
-                return nullptr;
-            }
-        } else {
-            PLUGIN_LOG_ERROR("MemoryConfigLoader: Missing originalSize field in memory operation: {}", name);
+        auto new_size_node = table.get("newSize");
+        if (!new_size_node || !new_size_node->is_integer()) {
+            PLUGIN_LOG_ERROR("MemoryConfigLoader: Missing or invalid newSize field");
             return nullptr;
         }
+        memory_config->set_new_size(new_size_node->as_integer()->get());
 
-        if (auto new_size_node = table.get("newSize")) {
-            if (new_size_node->is_integer()) {
-                auto new_size = static_cast<std::size_t>(new_size_node->as_integer()->get());
-                PLUGIN_LOG_DEBUG("MemoryConfigLoader: Parsed newSize: {}", new_size);
-                memory_config->set_new_size(new_size);
-            } else {
-                PLUGIN_LOG_ERROR("MemoryConfigLoader: Invalid newSize field type in memory operation: {}", name);
-                return nullptr;
-            }
-        } else {
-            PLUGIN_LOG_ERROR("MemoryConfigLoader: Missing newSize field in memory operation: {}", name);
+        auto copy_after_node = table.get("copyAfter");
+        if (!copy_after_node || !copy_after_node->is_string()) {
+            PLUGIN_LOG_ERROR("MemoryConfigLoader: Missing or invalid copyAfter field");
             return nullptr;
         }
+        memory_config->set_copy_after(parse_address(copy_after_node->as_string()->get()));
 
-        // Optional fields
-        if (auto description_node = table.get("description")) {
-            if (description_node->is_string()) {
-                auto description = description_node->as_string()->get();
-                PLUGIN_LOG_DEBUG("MemoryConfigLoader: Parsed description: {}", description);
-                memory_config->set_description(description);
-            }
+        // Parse optional fields
+        auto description_node = table.get("description");
+        if (description_node && description_node->is_string()) {
+            memory_config->set_description(description_node->as_string()->get());
         }
 
-        if (auto enabled_node = table.get("enabled")) {
-            if (enabled_node->is_boolean()) {
-                auto enabled = enabled_node->as_boolean()->get();
-                PLUGIN_LOG_DEBUG("MemoryConfigLoader: Parsed enabled: {}", enabled);
-                memory_config->set_enabled(enabled);
+        // Parse context configuration fields
+        PLUGIN_LOG_DEBUG("MemoryConfigLoader: Looking for writeInContext in table for config: {}", name);
+        
+        auto write_in_context_node = table.get("writeInContext");
+        if (write_in_context_node) {
+            PLUGIN_LOG_DEBUG("MemoryConfigLoader: Found writeInContext node, type: {}", 
+                           write_in_context_node->is_table() ? "table" : 
+                           write_in_context_node->is_string() ? "string" :
+                           write_in_context_node->is_boolean() ? "boolean" : "other");
+            
+            if (write_in_context_node->is_table()) {
+                auto& write_context_table = *write_in_context_node->as_table();
+                
+                app_hook::config::WriteContextConfig write_config;
+                
+                auto enabled_node = write_context_table.get("enabled");
+                if (enabled_node && enabled_node->is_boolean()) {
+                    write_config.enabled = enabled_node->as_boolean()->get();
+                    PLUGIN_LOG_DEBUG("MemoryConfigLoader: Parsed enabled: {}", write_config.enabled);
+                }
+                
+                auto name_node = write_context_table.get("name");
+                if (name_node && name_node->is_string()) {
+                    write_config.name = name_node->as_string()->get();
+                    PLUGIN_LOG_DEBUG("MemoryConfigLoader: Parsed name: '{}'", write_config.name);
+                }
+                
+                // Log before moving
+                PLUGIN_LOG_DEBUG("MemoryConfigLoader: Configured writeInContext - enabled: {}, name: '{}'", 
+                               write_config.enabled, write_config.name);
+                
+                memory_config->set_write_in_context(std::move(write_config));
             }
+        } else {
+            PLUGIN_LOG_DEBUG("MemoryConfigLoader: No writeInContext node found");
         }
 
-        PLUGIN_LOG_INFO("MemoryConfigLoader: Successfully created memory config: {}", name);
+        auto read_from_context_node = table.get("readFromContext");
+        if (read_from_context_node && read_from_context_node->is_string()) {
+            memory_config->set_read_from_context(read_from_context_node->as_string()->get());
+            PLUGIN_LOG_DEBUG("MemoryConfigLoader: Configured readFromContext: '{}'", 
+                           read_from_context_node->as_string()->get());
+        }
+
+        PLUGIN_LOG_DEBUG("MemoryConfigLoader: Successfully parsed memory operation: {}", name);
         return config;
+
     } catch (const std::exception& e) {
         PLUGIN_LOG_ERROR("MemoryConfigLoader: Exception while parsing memory operation: {}", e.what());
         return nullptr;

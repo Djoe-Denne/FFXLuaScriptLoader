@@ -30,6 +30,12 @@ FactoryResult HookFactory::create_hooks_from_tasks(
     // Track where each task was hooked for dependency resolution
     std::unordered_map<std::string, std::uintptr_t> task_hook_addresses;
     
+    // Create a map of task information for quick lookup
+    std::unordered_map<std::string, const config::TaskInfo*> task_info_map;
+    for (const auto& task : *tasks_result) {
+        task_info_map[get_task_key_from_file(task.config_file)] = &task;
+    }
+    
     // Process tasks in dependency order
     for (const auto& task_key : *order_result) {
         // Find the task info for this key
@@ -44,7 +50,7 @@ FactoryResult HookFactory::create_hooks_from_tasks(
         
         LOG_INFO("Processing task '{}' ({})", task_it->name, task_key);
         
-        if (auto result = process_task_with_dependencies(*task_it, task_hook_addresses, manager); !result) {
+        if (auto result = process_task_with_dependencies(*task_it, task_hook_addresses, task_info_map, manager); !result) {
             LOG_ERROR("Failed to process task '{}' ({})", task_it->name, task_key);
             return result;
         }
@@ -102,6 +108,7 @@ FactoryResult HookFactory::create_hooks_from_configs(
 FactoryResult HookFactory::process_task_with_dependencies(
     const config::TaskInfo& task,
     std::unordered_map<std::string, std::uintptr_t>& task_hook_addresses,
+    const std::unordered_map<std::string, const config::TaskInfo*>& task_info_map,
     HookManager& manager) {
     
     LOG_DEBUG("Processing task '{}' of type '{}'", task.name, to_string(task.type));
@@ -169,15 +176,20 @@ FactoryResult HookFactory::process_task_with_dependencies(
         for (const auto& [existing_task_key, existing_hook_address] : task_hook_addresses) {
             LOG_DEBUG("  Available task: '{}' at address 0x{:X}", existing_task_key, existing_hook_address);
             
-            // Check if we need to load the parent task info to see its followBy list
-            // For now, use a simple heuristic: following tasks use the hook from the last processed task
-            // This works for the current config where memory_expansion -> magic_patches
-            if (hook_address == 0) {
-                hook_address = existing_hook_address;
-                parent_task_key = existing_task_key;
-                LOG_DEBUG("Following task '{}' will use hook address 0x{:X} from parent task '{}'", 
-                         task_key, hook_address, parent_task_key);
-                break;
+            // Check if this existing task has the current task in its followBy list
+            auto parent_task_it = task_info_map.find(existing_task_key);
+            if (parent_task_it != task_info_map.end()) {
+                const auto& parent_task = *parent_task_it->second;
+                
+                // Check if this parent task has the current task in its followBy list
+                auto follow_it = std::find(parent_task.follow_by.begin(), parent_task.follow_by.end(), task_key);
+                if (follow_it != parent_task.follow_by.end()) {
+                    hook_address = existing_hook_address;
+                    parent_task_key = existing_task_key;
+                    LOG_DEBUG("Following task '{}' will use hook address 0x{:X} from parent task '{}'", 
+                             task_key, hook_address, parent_task_key);
+                    break;
+                }
             }
         }
         

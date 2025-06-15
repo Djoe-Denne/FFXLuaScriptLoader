@@ -49,56 +49,54 @@ PatchConfigLoader::load_patch_configs(const std::string& file_path, const std::s
         auto config = toml::parse_file(file_path);
         std::vector<app_hook::config::ConfigPtr> configs;
 
-        // Parse patch operations from TOML - check both "patch" and "instructions" sections
-        toml::node* patch_section = nullptr;
-        if (auto section = config.get("patch")) {
-            PLUGIN_LOG_DEBUG("PatchConfigLoader: Found 'patch' section");
-            patch_section = section;
-        } else if (auto section = config.get("instructions")) {
-            PLUGIN_LOG_DEBUG("PatchConfigLoader: Found 'instructions' section");
-            patch_section = section;
-        }
-        
-        if (patch_section) {
-            if (patch_section->is_table()) {
-                PLUGIN_LOG_DEBUG("PatchConfigLoader: Found patch section as table format");
-                // Table format: [patch.item]
-                auto& patch_table = *patch_section->as_table();
-                PLUGIN_LOG_INFO("PatchConfigLoader: Processing {} patch instructions", patch_table.size());
+        // Create a patch configuration for this task
+        auto patch_config = app_hook::config::make_config<app_hook::config::PatchConfig>(
+            task_name, task_name);
+        auto* patch_config_ptr = static_cast<app_hook::config::PatchConfig*>(patch_config.get());
+
+        // Parse metadata section
+        if (auto metadata = config.get("metadata")) {
+            if (metadata->is_table()) {
+                auto& metadata_table = *metadata->as_table();
                 
-                auto patch_config = app_hook::config::make_config<app_hook::config::PatchConfig>(task_name, task_name);
-                auto* patch_config_ptr = static_cast<app_hook::config::PatchConfig*>(patch_config.get());
-                patch_config_ptr->set_patch_file_path(file_path);
-                
-                std::vector<app_hook::config::InstructionPatch> instructions;
-                for (auto& [key, value] : patch_table) {
-                    if (value.is_table()) {
-                        PLUGIN_LOG_DEBUG("PatchConfigLoader: Parsing instruction with key: {}", std::string(key));
-                        auto instruction = parse_single_instruction(std::string(key), value);
-                        if (instruction) {
-                            PLUGIN_LOG_DEBUG("PatchConfigLoader: Successfully parsed instruction: {}", std::string(key));
-                            instructions.push_back(*instruction);
-                        } else {
-                            PLUGIN_LOG_WARN("PatchConfigLoader: Failed to parse instruction: {}", std::string(key));
-                        }
-                    } else {
-                        PLUGIN_LOG_WARN("PatchConfigLoader: Invalid instruction format for key: {}", std::string(key));
+                if (auto desc = metadata_table.get("description")) {
+                    if (desc->is_string()) {
+                        patch_config_ptr->set_description(desc->as_string()->get());
                     }
                 }
                 
-                if (!instructions.empty()) {
-                    PLUGIN_LOG_INFO("PatchConfigLoader: Successfully parsed {} instructions", instructions.size());
-                    patch_config_ptr->set_instructions(std::move(instructions));
-                    configs.push_back(std::move(patch_config));
-                } else {
-                    PLUGIN_LOG_WARN("PatchConfigLoader: No valid instructions found in patch section");
+                // Parse context configuration fields
+                if (auto read_from_context = metadata_table.get("readFromContext")) {
+                    if (read_from_context->is_string()) {
+                        patch_config_ptr->set_read_from_context(read_from_context->as_string()->get());
+                        PLUGIN_LOG_DEBUG("PatchConfigLoader: Configured readFromContext: '{}'", 
+                                       read_from_context->as_string()->get());
+                    }
                 }
-            } else {
-                PLUGIN_LOG_WARN("PatchConfigLoader: Patch section is not a table");
             }
-        } else {
-            PLUGIN_LOG_DEBUG("PatchConfigLoader: No patch section found in config file");
         }
+
+        // Parse instruction sections
+        std::vector<app_hook::config::InstructionPatch> instructions;
+        if (auto instructions_node = config.get("instructions")) {
+            if (instructions_node->is_table()) {
+                auto& instructions_table = *instructions_node->as_table();
+                PLUGIN_LOG_INFO("PatchConfigLoader: Processing {} instruction patches", instructions_table.size());
+                
+                for (auto& [key, value] : instructions_table) {
+                    auto instruction = parse_single_instruction(std::string(key), value);
+                    if (instruction) {
+                        instructions.push_back(std::move(*instruction));
+                        PLUGIN_LOG_DEBUG("PatchConfigLoader: Successfully parsed instruction: {}", std::string(key));
+                    } else {
+                        PLUGIN_LOG_WARN("PatchConfigLoader: Failed to parse instruction: {}", std::string(key));
+                    }
+                }
+            }
+        }
+
+        patch_config_ptr->set_instructions(std::move(instructions));
+        configs.push_back(std::move(patch_config));
 
         PLUGIN_LOG_INFO("PatchConfigLoader: Successfully loaded {} patch configurations", configs.size());
         return configs;

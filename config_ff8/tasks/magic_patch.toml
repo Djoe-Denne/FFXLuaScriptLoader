@@ -5,6 +5,9 @@ image_base = "0x00400000"
 total_instructions = 67
 description = "Instructions pré-patchées pour ff8_hook"
 
+# Context configuration - read from the memory region created by the copy task
+readFromContext = "ff8.magic.k_magic_data"
+
 [instructions.0x0048D774]
 bytes = "8D 86 XX XX XX XX"
 offset = "0x2A"

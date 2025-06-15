@@ -1,0 +1,14 @@
+[metadata]
+script_version = "1.0.0"
+memory_base = "0x01CF8FD0"
+image_base = "0x00400000"
+total_instructions = 1
+description = "Instructions pré-patchées pour ff8_hook"
+
+# Context configuration - read from the memory region created by the copy task
+readFromContext = "ff8.magic.text_data"
+
+[instructions.0x01CF3ECC]
+bytes = "XX XX XX XX"
+offset = "-0x01CF3E48"
+

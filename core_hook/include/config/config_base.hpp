@@ -62,6 +62,17 @@ public:
     }
 };
 
+/// @brief Configuration for writing data to context
+struct WriteContextConfig {
+    bool enabled = false;           ///< Whether to write to context
+    std::string name;              ///< Name/key to use when writing to context
+    
+    /// @brief Check if write context config is valid
+    [[nodiscard]] bool is_valid() const noexcept {
+        return !enabled || !name.empty();
+    }
+};
+
 /// @brief Base class for all configuration types
 /// @note Provides common interface and polymorphic behavior
 class ConfigBase {
@@ -75,7 +86,9 @@ public:
         , key_(std::move(key))
         , name_(std::move(name))
         , description_{}
-        , enabled_(true) {}
+        , enabled_(true)
+        , write_in_context_{}
+        , read_from_context_{} {}
 
     /// @brief Virtual destructor for polymorphic behavior
     virtual ~ConfigBase() = default;
@@ -122,10 +135,46 @@ public:
     /// @param enabled Whether configuration is enabled
     void set_enabled(bool enabled) noexcept { enabled_ = enabled; }
 
+    /// @brief Get write context configuration
+    /// @return Write context config
+    [[nodiscard]] const WriteContextConfig& write_in_context() const noexcept { 
+        return write_in_context_; 
+    }
+
+    /// @brief Get read from context key
+    /// @return Key to read from context (empty if not used)
+    [[nodiscard]] const std::string& read_from_context() const noexcept { 
+        return read_from_context_; 
+    }
+
+    /// @brief Set write context configuration
+    /// @param config Write context configuration
+    void set_write_in_context(WriteContextConfig config) { 
+        write_in_context_ = std::move(config); 
+    }
+
+    /// @brief Set read from context key
+    /// @param key Key to read from context
+    void set_read_from_context(std::string key) { 
+        read_from_context_ = std::move(key); 
+    }
+
+    /// @brief Check if this configuration writes to context
+    /// @return True if configured to write to context
+    [[nodiscard]] bool writes_to_context() const noexcept {
+        return write_in_context_.enabled;
+    }
+
+    /// @brief Check if this configuration reads from context
+    /// @return True if configured to read from context
+    [[nodiscard]] bool reads_from_context() const noexcept {
+        return !read_from_context_.empty();
+    }
+
     /// @brief Check if this configuration is valid
     /// @return True if valid (to be overridden by derived classes)
     [[nodiscard]] virtual bool is_valid() const noexcept {
-        return !key_.empty() && !name_.empty();
+        return !key_.empty() && !name_.empty() && write_in_context_.is_valid();
     }
 
     /// @brief Get a string representation for debugging
@@ -165,6 +214,12 @@ protected:
     
     /// @brief Whether this configuration is enabled
     bool enabled_;
+    
+    /// @brief Context write configuration
+    WriteContextConfig write_in_context_;
+    
+    /// @brief Key to read from context
+    std::string read_from_context_;
 };
 
 /// @brief Smart pointer type for configuration objects

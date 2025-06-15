@@ -48,6 +48,7 @@ public:
     std::string get_plugin_data_path() const override;
     void log_message(int level, const std::string& message) override;
     std::pair<void*, std::uint32_t> get_process_info() const override;
+    ::app_hook::context::ModContext& get_mod_context() override;
 
 private:
     std::function<void(std::unique_ptr<::app_hook::config::ConfigBase>)> config_registry_;

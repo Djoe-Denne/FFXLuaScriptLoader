@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <format>
 #include <string_view>
+#include <fstream>
 
 namespace injector {
 
@@ -186,13 +187,95 @@ namespace injector {
      * @param programName Name of the program executable
      */
     void ShowUsage(const char* programName) {
-        std::cout << "Usage: " << programName << " <process_name> [dll_name]\n\n";
+        std::cout << "Usage: " << programName << " <process_name> [dll_name] [--config-dir <path>] [--plugin-dir <path>]\n\n";
         std::cout << "Arguments:\n";
         std::cout << "  process_name  Name of the target process (e.g., myapp.exe)\n";
         std::cout << "  dll_name      Name of DLL to inject (default: app_hook.dll)\n\n";
+        std::cout << "Options:\n";
+        std::cout << "  --config-dir  Directory for configuration files (default: config)\n";
+        std::cout << "  --plugin-dir  Directory for plugin tasks (default: mods/xtender/tasks)\n\n";
         std::cout << "Examples:\n";
         std::cout << "  " << programName << " myapp.exe\n";
         std::cout << "  " << programName << " game.exe custom_hook.dll\n";
+        std::cout << "  " << programName << " app.exe app_hook.dll --config-dir custom_config --plugin-dir custom_plugins\n";
+    }
+
+    /**
+     * @brief Parse command line arguments
+     * @param argc Argument count
+     * @param argv Argument values
+     * @param processName [out] Target process name
+     * @param dllName [out] DLL name to inject
+     * @param configDir [out] Configuration directory path
+     * @param pluginDir [out] Plugin directory path
+     * @return true if parsing successful, false otherwise
+     */
+    bool ParseArguments(int argc, char* argv[], std::string& processName, std::string& dllName, 
+                       std::string& configDir, std::string& pluginDir) {
+        if (argc < 2) {
+            return false;
+        }
+        
+        processName = argv[1];
+        dllName = "app_hook.dll";  // default
+        configDir = "config";      // default
+        pluginDir = "mods/xtender/tasks";  // default
+        
+        // Parse remaining arguments
+        for (int i = 2; i < argc; ++i) {
+            std::string arg = argv[i];
+            
+            if (arg == "--config-dir" && i + 1 < argc) {
+                configDir = argv[++i];
+            }
+            else if (arg == "--plugin-dir" && i + 1 < argc) {
+                pluginDir = argv[++i];
+            }
+            else if (!arg.starts_with("--")) {
+                // Assume it's the DLL name (for backward compatibility)
+                dllName = arg;
+            }
+            else {
+                std::cerr << std::format("Unknown option: {}\n", arg);
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * @brief Write configuration paths to a temporary file for the DLL to read
+     * @param configDir Configuration directory path
+     * @param pluginDir Plugin directory path
+     * @return true if successful, false otherwise
+     */
+    [[nodiscard]] bool WriteConfigFile(const std::string& configDir, const std::string& pluginDir) {
+        try {
+            // Create temp directory if it doesn't exist
+            std::filesystem::path tempDir = std::filesystem::temp_directory_path() / "ffscript_loader";
+            std::filesystem::create_directories(tempDir);
+            
+            // Write configuration to temporary file
+            std::filesystem::path configFile = tempDir / "injector_config.txt";
+            std::ofstream outFile(configFile);
+            
+            if (!outFile.is_open()) {
+                std::cerr << std::format("Failed to create config file: {}\n", configFile.string());
+                return false;
+            }
+            
+            outFile << "config_dir=" << configDir << "\n";
+            outFile << "plugin_dir=" << pluginDir << "\n";
+            outFile.close();
+            
+            std::cout << std::format("Configuration written to: {}\n", configFile.string());
+            return true;
+        }
+        catch (const std::exception& e) {
+            std::cerr << std::format("Exception writing config file: {}\n", e.what());
+            return false;
+        }
     }
 
 } // namespace injector
@@ -204,14 +287,16 @@ int main(int argc, char* argv[]) {
     std::cout << "=================================================\n\n";
 
     // Parse command line arguments
-    if (argc < 2) {
+    std::string processName;
+    std::string dllName;
+    std::string configDir;
+    std::string pluginDir;
+
+    if (!ParseArguments(argc, argv, processName, dllName, configDir, pluginDir)) {
         ShowUsage(argv[0]);
         system("pause");
         return 1;
     }
-
-    std::string processName = argv[1];
-    std::string dllName = (argc >= 3) ? argv[2] : "app_hook.dll";
 
     // Get the current directory and construct DLL path
     std::filesystem::path currentPath = std::filesystem::current_path();
@@ -230,7 +315,9 @@ int main(int argc, char* argv[]) {
     }
     
     std::cout << std::format("Target process: {}\n", processName);
-    std::cout << std::format("DLL found at: {}\n\n", dllPathStr);
+    std::cout << std::format("DLL found at: {}\n", dllPathStr);
+    std::cout << std::format("Config directory: {}\n", configDir);
+    std::cout << std::format("Plugin directory: {}\n\n", pluginDir);
 
     std::cout << std::format("Looking for {} process...\n", processName);
 
@@ -281,6 +368,14 @@ int main(int argc, char* argv[]) {
         }
     #endif
     
+    // Write configuration file for DLL to read
+    std::cout << "Writing configuration file for DLL...\n";
+    if (!WriteConfigFile(configDir, pluginDir)) {
+        std::cerr << "\nFailed to write configuration file!\n";
+        system("pause");
+        return 1;
+    }
+
     std::cout << std::format("\nInjecting DLL: {}\n", dllPathStr);
 
     if (!InjectDLL(processId, dllPathStr)) {

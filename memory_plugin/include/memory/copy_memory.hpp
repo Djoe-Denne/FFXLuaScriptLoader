@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../config/memory_config.hpp"
+#include "../memory/memory_region.hpp"
 #include "../../core_hook/include/task/hook_task.hpp"
 #include "../../core_hook/include/context/mod_context.hpp"
 

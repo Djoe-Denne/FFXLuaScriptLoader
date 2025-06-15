@@ -8,8 +8,7 @@
 #include <memory>
 #include <expected>
 
-// Forward declaration for plugin host
-namespace app_hook::plugin { class IPluginHost; }
+
 
 namespace app_hook::task {
 
@@ -25,9 +24,7 @@ public:
     /// @return Task factory instance
     static TaskFactory& instance();
 
-    /// @brief Set the plugin host for newly created tasks
-    /// @param host Plugin host to set on new tasks (can be nullptr)
-    void set_plugin_host(app_hook::plugin::IPluginHost* host);
+
 
     /// @brief Register a task creator for a specific config type
     /// @param config_type_name Name of the configuration type (e.g., "CopyMemoryConfig")
@@ -63,7 +60,6 @@ private:
     TaskFactory& operator=(TaskFactory&&) = delete;
 
     std::unordered_map<std::string, TaskCreatorFunc> creators_;
-    app_hook::plugin::IPluginHost* plugin_host_ = nullptr;
 };
 
 /// @brief Helper macro to register a task creator

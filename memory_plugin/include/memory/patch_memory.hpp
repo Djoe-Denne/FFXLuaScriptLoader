@@ -1,8 +1,9 @@
 #pragma once
 
-#include "config/patch_config.hpp"
-#include "../../core_hook/include/task/hook_task.hpp"
 #include "../config/patch_config.hpp"
+#include "../memory/memory_region.hpp"
+#include "../../core_hook/include/task/hook_task.hpp"
+#include "../../core_hook/include/context/mod_context.hpp"
 #include "../../core_hook/include/config/config_loader.hpp"
 #include <string>
 #include <cstdint>

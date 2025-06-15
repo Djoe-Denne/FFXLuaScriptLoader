@@ -1,80 +1,20 @@
 #pragma once
 
+#include "util/logger.hpp"
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <mutex>
-#include <span>
-#include <cstdint>
-#include <sstream>
-#include <iomanip>
+#include <any>
+#include <typeinfo>
+#include <type_traits>
+#include <vector>
 
 namespace app_hook::context {
 
-/// @brief Memory region information stored in the context
-struct MemoryRegion {
-    std::unique_ptr<std::uint8_t[]> data;
-    std::size_t size;
-    std::uintptr_t original_address;
-    std::string description;
-    
-    MemoryRegion() : data(nullptr), size(0), original_address(0), description() {}
-    MemoryRegion(std::size_t sz, std::uintptr_t addr, std::string desc)
-        : data(std::make_unique<std::uint8_t[]>(sz))
-        , size(sz)
-        , original_address(addr)
-        , description(std::move(desc)) {}
-        
-    // Non-copyable but movable
-    MemoryRegion(const MemoryRegion&) = delete;
-    MemoryRegion& operator=(const MemoryRegion&) = delete;
-    MemoryRegion(MemoryRegion&&) = default;
-    MemoryRegion& operator=(MemoryRegion&&) = default;
-    
-    /// @brief Get a span view of the memory region
-    [[nodiscard]] std::span<std::uint8_t> span() noexcept {
-        return {data.get(), size};
-    }
-    
-    /// @brief Get a const span view of the memory region
-    [[nodiscard]] std::span<const std::uint8_t> span() const noexcept {
-        return {data.get(), size};
-    }
-
-    /// @brief Get the memory region as a string
-    [[nodiscard]] std::string to_string() const noexcept {
-        std::stringstream ss;
-        ss << "MemoryRegion: " << description << " [0x" << std::hex << original_address << " - 0x" << std::hex << original_address + size << "]";
-        return ss.str();
-    }
-
-    /// @brief Get the memory content as a string
-    [[nodiscard]] std::string to_string(std::size_t offset, std::size_t count) const noexcept {
-        // Safety checks
-        if (!data || offset >= size) {
-            return "Invalid offset or null data";
-        }
-        
-        // Clamp count to available data
-        const std::size_t max_count = size - offset;
-        const std::size_t actual_count = (count > max_count) ? max_count : count;
-        
-        std::stringstream ss;
-        ss << std::hex << std::uppercase;
-        
-        for (std::size_t i = 0; i < actual_count; ++i) {
-            if (i > 0 && i % 16 == 0) {
-                ss << std::endl;
-            } else if (i > 0) {
-                ss << " ";
-            }
-            ss << "0x" << std::setfill('0') << std::setw(2) << static_cast<unsigned int>(data.get()[offset + i]);
-        }
-        return ss.str();
-    }
-};
-
-/// @brief Thread-safe context for mod operations
+/// @brief Thread-safe generic context for mod operations
+/// @note Stores any type of data using std::any for maximum flexibility
+/// @note For move-only types, data is wrapped in shared_ptr automatically
 class ModContext {
 public:
     ModContext() = default;
@@ -86,53 +26,122 @@ public:
     ModContext(ModContext&&) = delete;
     ModContext& operator=(ModContext&&) = delete;
     
-    /// @brief Store a memory region with the given key
-    /// @param key Memory region key (e.g., "memory.K_MAGIC")
-    /// @param region Memory region to store
-    void store_memory_region(const std::string& key, MemoryRegion region) {
+    /// @brief Store data with the given key
+    /// @tparam T Type of data to store
+    /// @param key Data key (e.g., "ff8.magic.k_magic_data")
+    /// @param data Data to store
+    template<typename T>
+    void store_data(const std::string& key, T&& data) {
         std::lock_guard lock{mutex_};
-        memory_regions_[key] = std::move(region);
+        
+        // For move-only types, wrap in shared_ptr
+        if constexpr (!std::is_copy_constructible_v<std::decay_t<T>>) {
+            LOG_DEBUG("Storing move-only type for key: {}", key);
+            data_[key] = std::make_shared<std::decay_t<T>>(std::forward<T>(data));
+        } else {
+            LOG_DEBUG("Storing copyable type for key: {}", key);
+            data_[key] = std::forward<T>(data);
+        }
     }
     
-    /// @brief Get a memory region by key
-    /// @param key Memory region key
-    /// @return Pointer to memory region or nullptr if not found
-    [[nodiscard]] MemoryRegion* get_memory_region(const std::string& key) {
+    /// @brief Get data by key
+    /// @tparam T Expected type of the data
+    /// @param key Data key
+    /// @return Pointer to data of type T, or nullptr if not found or wrong type
+    template<typename T>
+    [[nodiscard]] T* get_data(const std::string& key) {
         std::lock_guard lock{mutex_};
-        if (auto it = memory_regions_.find(key); it != memory_regions_.end()) {
-            return &it->second;
+        if (auto it = data_.find(key); it != data_.end()) {
+            try {
+                // Try direct access first
+                if (auto* direct = std::any_cast<T>(&it->second)) {
+                    return direct;
+                }
+                // Try shared_ptr access for move-only types
+                if (auto* shared = std::any_cast<std::shared_ptr<T>>(&it->second)) {
+                    return shared->get();
+                }
+            } catch (const std::bad_any_cast&) {
+                // Type mismatch
+                LOG_ERROR("Type mismatch for key: {}", key);
+            }
         }
         return nullptr;
     }
     
-    /// @brief Get a const memory region by key
-    /// @param key Memory region key
-    /// @return Const pointer to memory region or nullptr if not found
-    [[nodiscard]] const MemoryRegion* get_memory_region(const std::string& key) const {
+    /// @brief Get const data by key
+    /// @tparam T Expected type of the data
+    /// @param key Data key
+    /// @return Const pointer to data of type T, or nullptr if not found or wrong type
+    template<typename T>
+    [[nodiscard]] const T* get_data(const std::string& key) const {
         std::lock_guard lock{mutex_};
-        if (auto it = memory_regions_.find(key); it != memory_regions_.end()) {
-            return &it->second;
+        if (auto it = data_.find(key); it != data_.end()) {
+            try {
+                // Try direct access first
+                if (const auto* direct = std::any_cast<T>(&it->second)) {
+                    return direct;
+                }
+                // Try shared_ptr access for move-only types
+                if (const auto* shared = std::any_cast<std::shared_ptr<T>>(&it->second)) {
+                    return shared->get();
+                }
+            } catch (const std::bad_any_cast&) {
+                // Type mismatch
+            }
         }
         return nullptr;
     }
     
-    /// @brief Check if a memory region exists
-    /// @param key Memory region key
-    /// @return true if region exists
-    [[nodiscard]] bool has_memory_region(const std::string& key) const {
+    /// @brief Check if data exists with the given key
+    /// @param key Data key
+    /// @return true if data exists
+    [[nodiscard]] bool has_data(const std::string& key) const {
         std::lock_guard lock{mutex_};
-        return memory_regions_.contains(key);
+        return data_.contains(key);
+    }
+    
+    /// @brief Get the type info of stored data
+    /// @param key Data key
+    /// @return Type info of the stored data, or nullptr if key not found
+    [[nodiscard]] const std::type_info* get_data_type(const std::string& key) const {
+        std::lock_guard lock{mutex_};
+        if (auto it = data_.find(key); it != data_.end()) {
+            return &it->second.type();
+        }
+        return nullptr;
+    }
+    
+    /// @brief Remove data with the given key
+    /// @param key Data key
+    /// @return true if data was removed
+    [[nodiscard]] bool remove_data(const std::string& key) {
+        std::lock_guard lock{mutex_};
+        return data_.erase(key) > 0;
+    }
+    
+    /// @brief Get all keys in the context
+    /// @return Vector of all stored keys
+    [[nodiscard]] std::vector<std::string> get_all_keys() const {
+        std::lock_guard lock{mutex_};
+        std::vector<std::string> keys;
+        keys.reserve(data_.size());
+        for (const auto& [key, _] : data_) {
+            keys.push_back(key);
+        }
+        return keys;
     }
     
     /// @brief Get the global instance
     [[nodiscard]] static ModContext& instance() {
         static ModContext instance;
+        LOG_DEBUG("ModContext instance : 0x{:X}", reinterpret_cast<uintptr_t>(&instance));
         return instance;
     }
     
 private:
     mutable std::mutex mutex_;
-    std::unordered_map<std::string, MemoryRegion> memory_regions_;
+    std::unordered_map<std::string, std::any> data_;
 };
 
 } // namespace app_hook::context

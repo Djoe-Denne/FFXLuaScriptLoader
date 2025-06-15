@@ -58,11 +58,13 @@ private:
     /// @brief Process a single task with dependency handling
     /// @param task Task information
     /// @param task_hook_addresses Map tracking where each task was hooked
+    /// @param task_info_map Map of task keys to task information for followBy lookup
     /// @param manager Hook manager to add tasks to
     /// @return Result of operation
     [[nodiscard]] static FactoryResult process_task_with_dependencies(
         const config::TaskInfo& task,
         std::unordered_map<std::string, std::uintptr_t>& task_hook_addresses,
+        const std::unordered_map<std::string, const config::TaskInfo*>& task_info_map,
         HookManager& manager);
     
     /// @brief Extract task key from config file path

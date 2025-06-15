@@ -1,0 +1,10 @@
+# FF8 Memory Hook Configuration
+# This file defines memory regions to copy and expand
+
+[memory.offsetMagicText]
+address = "0x01CF8FD0"
+originalSize = 1584
+newSize = 4096
+copyAfter = "0x0047D343"
+description = "Copy in an extended memory zone the magic related text (Spells name and description)"
+writeInContext = { enabled = true, name = "ff8.magic.text_data" }

@@ -1,6 +1,7 @@
 #include "plugin/plugin_manager.hpp"
 #include "config/config_factory.hpp"
 #include "task/task_factory.hpp"
+#include "context/mod_context.hpp"
 #include "util/logger.hpp"
 #include <filesystem>
 #include <algorithm>
@@ -86,6 +87,10 @@ void PluginHost::log_message(int level, const std::string& message) {
 
 std::pair<void*, std::uint32_t> PluginHost::get_process_info() const {
     return {GetCurrentProcess(), GetCurrentProcessId()};
+}
+
+::app_hook::context::ModContext& PluginHost::get_mod_context() {
+    return ::app_hook::context::ModContext::instance();
 }
 
 // PluginManager implementation

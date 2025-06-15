@@ -1,4 +1,5 @@
 #include "../include/memory/patch_memory.hpp"
+#include "../include/memory/memory_region.hpp"
 #include "../../core_hook/include/task/hook_task.hpp"
 #include "../../core_hook/include/context/mod_context.hpp"
 #include "plugin/plugin_interface.hpp"
@@ -21,10 +22,23 @@ task::TaskResult PatchMemoryTask::execute() {
     }
     
     try {
+        // Determine which key to use for reading from context
+        std::string context_key;
+        if (config_.reads_from_context()) {
+            context_key = config_.read_from_context();
+            PLUGIN_LOG_DEBUG("Using configured read context key: '{}'", context_key);
+        } else {
+            // Fall back to legacy key (same as task key) for backward compatibility
+            context_key = config_.key();
+            PLUGIN_LOG_DEBUG("Using legacy read context key: '{}'", context_key);
+        }
+        
         // Get the new memory base address from context  
-        auto memory_region = app_hook::context::ModContext::instance().get_memory_region(config_.key());
+        auto memory_region = host_ ? 
+            host_->get_mod_context().get_data<MemoryRegion>(context_key) :
+            app_hook::context::ModContext::instance().get_data<MemoryRegion>(context_key);
         if (!memory_region) {
-            PLUGIN_LOG_ERROR("Memory region '{}' not found in context for PatchMemoryTask", config_.key());
+            PLUGIN_LOG_ERROR("Memory region '{}' not found in context for PatchMemoryTask", context_key);
             return std::unexpected(task::TaskError::invalid_address);
         }
         

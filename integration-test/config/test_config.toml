@@ -1,7 +1,0 @@
-# Integration Test Configuration
-# This is a dummy configuration file for testing plugin loading
-
-[test_termination]
-name = "Integration Test Termination Config"
-description = "Configuration for integration test termination signal"
-enabled = true 

@@ -1,5 +1,7 @@
 #include <Windows.h>
 #include <string>
+#include <fstream>
+#include <filesystem>
 #include <hook/hook_manager.hpp>
 #include <hook/hook_factory.hpp>
 #include <util/logger.hpp>
@@ -10,6 +12,77 @@ app_hook::hook::HookManager g_hook_manager;
 
 // Global plugin manager
 app_hook::plugin::PluginManager g_plugin_manager;
+
+/**
+ * @brief Read configuration from injector config file
+ * @param configDir [out] Configuration directory path
+ * @param pluginDir [out] Plugin directory path
+ * @return true if config file was read successfully, false otherwise
+ */
+bool ReadInjectorConfig(std::string& configDir, std::string& pluginDir) {
+    try {
+        // Look for config file in temp directory
+        std::filesystem::path tempDir = std::filesystem::temp_directory_path() / "ffscript_loader";
+        std::filesystem::path configFile = tempDir / "injector_config.txt";
+        
+        if (!std::filesystem::exists(configFile)) {
+            return false;
+        }
+        
+        std::ifstream inFile(configFile);
+        if (!inFile.is_open()) {
+            return false;
+        }
+        
+        std::string line;
+        while (std::getline(inFile, line)) {
+            size_t equalPos = line.find('=');
+            if (equalPos != std::string::npos) {
+                std::string key = line.substr(0, equalPos);
+                std::string value = line.substr(equalPos + 1);
+                
+                if (key == "config_dir") {
+                    configDir = value;
+                } else if (key == "plugin_dir") {
+                    pluginDir = value;
+                }
+            }
+        }
+        
+        return true;
+    }
+    catch (const std::exception& e) {
+        return false;
+    }
+}
+
+/**
+ * @brief Get configuration directory from injector config or use default
+ * @return Configuration directory path
+ */
+std::string GetConfigDirectory() {
+    std::string configDir, pluginDir;
+    if (ReadInjectorConfig(configDir, pluginDir) && !configDir.empty()) {
+        return configDir;
+    } else {
+        // Fall back to default
+        return "config";
+    }
+}
+
+/**
+ * @brief Get plugin directory from injector config or use default
+ * @return Plugin directory path
+ */
+std::string GetPluginDirectory() {
+    std::string configDir, pluginDir;
+    if (ReadInjectorConfig(configDir, pluginDir) && !pluginDir.empty()) {
+        return pluginDir;
+    } else {
+        // Fall back to default
+        return "tasks";
+    }
+}
 
 void InstallHooks() {
     // Initialize logging first
@@ -25,6 +98,24 @@ void InstallHooks() {
     LOG_INFO("================================");
     
     LOG_INFO("Initializing hook system...");
+    
+    // Get configuration paths from injector config file or defaults
+    const std::string config_dir = GetConfigDirectory();
+    const std::string plugin_dir = GetPluginDirectory();
+    
+    // Check if configuration was loaded from injector
+    std::string injectorConfigDir, injectorPluginDir;
+    bool configFromInjector = ReadInjectorConfig(injectorConfigDir, injectorPluginDir);
+    
+    if (configFromInjector) {
+        LOG_INFO("Configuration loaded from injector:");
+        LOG_INFO("  Config directory: {} (from injector)", config_dir);
+        LOG_INFO("  Plugin directory: {} (from injector)", plugin_dir);
+    } else {
+        LOG_INFO("Using default configuration (no injector config found):");
+        LOG_INFO("  Config directory: {} (default)", config_dir);
+        LOG_INFO("  Plugin directory: {} (default)", plugin_dir);
+    }
     
     // Initialize plugin system
     LOG_INFO("Initializing plugin system...");
@@ -55,12 +146,12 @@ void InstallHooks() {
     }
     
     // Load plugins from tasks directory
-    LOG_INFO("Loading plugins from directory: mods/xtender/tasks/");
+    LOG_INFO("Loading plugins from directory: {}/", plugin_dir);
     std::size_t loaded_plugins = 0;
     
     try {
         LOG_INFO("About to call load_plugins_from_directory...");
-        loaded_plugins = g_plugin_manager.load_plugins_from_directory("mods/xtender/tasks");
+        loaded_plugins = g_plugin_manager.load_plugins_from_directory(plugin_dir);
         LOG_INFO("load_plugins_from_directory returned: {}", loaded_plugins);
     }
     catch (const std::exception& e) {
@@ -79,7 +170,7 @@ void InstallHooks() {
     // Initialize plugins with configuration
     LOG_INFO("About to initialize plugins with configuration...");
     try {
-        if (auto result = g_plugin_manager.initialize_plugins("config"); result != app_hook::plugin::PluginResult::Success) {
+        if (auto result = g_plugin_manager.initialize_plugins(config_dir); result != app_hook::plugin::PluginResult::Success) {
             LOG_ERROR("Failed to initialize plugins with result: {}", static_cast<int>(result));
             MessageBoxA(NULL, "Failed to initialize plugins\nCheck logs/app_hook.log for details", "Plugin Error", MB_OK);
             return;
@@ -98,7 +189,7 @@ void InstallHooks() {
     }
     
     // Load configuration and create hooks
-    const std::string tasks_config_path = "config/tasks.toml";
+    const std::string tasks_config_path = config_dir + "/tasks.toml";
     LOG_INFO("Loading tasks configuration from: {}", tasks_config_path);
     
     try {

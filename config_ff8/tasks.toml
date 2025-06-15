@@ -6,18 +6,35 @@ version = "1.0.0"
 description = "Main configuration file that references all task configurations"
 
 # Memory expansion tasks
-[tasks.memory_expansion]
-name = "Memory Expansion"
+[tasks.copy_magic_memory_config]
+name = "Magic Expansion"
 description = "Tasks that expand memory regions for FF8 modding"
 type = "memory"
-config_file = "config/tasks/memory_config.toml"
-followBy = ["magic_patches"]
+config_file = "config/tasks/copy_magic_memory_config.toml"
+followBy = ["magic_patch"]
 enabled = true
 
 # Patch tasks  
-[tasks.magic_patches]
+[tasks.magic_patch]
 name = "Magic System Patches"
 description = "Pre-patched instructions for magic system modifications"
 type = "patch"
 config_file = "config/tasks/magic_patch.toml"
 enabled = true 
+
+# Memory expansion tasks
+[tasks.copy_magic_text_memory_config]
+name = "Magic Text Expansion"
+description = "Tasks that expand memory regions for FF8 modding"
+type = "memory"
+config_file = "config/tasks/copy_magic_text_memory_config.toml"
+followBy = ["magic_text_patch"]
+enabled = true
+
+# Patch tasks  
+[tasks.magic_text_patch]
+name = "Magic Text Patches"
+description = "Pre-patched instructions for magic text modifications"
+type = "patch"
+config_file = "config/tasks/magic_text_patch.toml"
+enabled = true

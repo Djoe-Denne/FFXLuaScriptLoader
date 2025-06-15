@@ -10,6 +10,7 @@
 #include "config/config_base.hpp"
 #include "config/config_loader_base.hpp"
 #include "task/hook_task.hpp"
+#include "context/mod_context.hpp"
 
 namespace app_hook::plugin {
 
@@ -83,6 +84,10 @@ public:
     /// @brief Get current process information
     /// @return Process handle and ID
     virtual std::pair<void*, std::uint32_t> get_process_info() const = 0;
+    
+    /// @brief Get access to the host's ModContext instance
+    /// @return Reference to the host's ModContext
+    virtual ::app_hook::context::ModContext& get_mod_context() = 0;
 };
 
 /// @brief Plugin interface - implemented by plugins
