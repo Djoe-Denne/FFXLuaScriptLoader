@@ -1,8 +1,10 @@
 #include "plugin/plugin_interface.hpp"
 #include "../include/config/memory_config_loader.hpp"
 #include "../include/config/patch_config_loader.hpp"
+#include "../include/config/load_in_memory_config_loader.hpp"
 #include "../include/memory/copy_memory.hpp"
 #include "../include/memory/patch_memory.hpp"
+#include "../include/memory/load_in_memory.hpp"
 #include "task/task_factory.hpp"
 #include <filesystem>
 #include <string>
@@ -54,6 +56,16 @@ public:
         }
         PLUGIN_LOG_INFO("Memory Plugin: Patch config loader registered successfully");
         
+        // Register load in memory config loader
+        auto load_in_memory_loader = std::make_unique<LoadInMemoryConfigLoader>();
+        load_in_memory_loader->setHost(host_); // Set host for logging
+        auto load_in_memory_result = host_->register_config_loader(std::move(load_in_memory_loader));
+        if (load_in_memory_result != app_hook::plugin::PluginResult::Success) {
+            PLUGIN_LOG_ERROR("Memory Plugin: Failed to register load in memory config loader");
+            return load_in_memory_result;
+        }
+        PLUGIN_LOG_INFO("Memory Plugin: Load in memory config loader registered successfully");
+        
         // Task creators will capture host_ and set it directly on created tasks
         
         // Register task creators (back to original approach)
@@ -98,6 +110,25 @@ public:
             return patch_creator_result;
         }
         PLUGIN_LOG_INFO("Memory Plugin: PatchMemoryTask creator registered successfully");
+        
+        // Register LoadInMemoryTask creator
+        auto load_in_memory_creator_result = host_->register_task_creator(
+            "app_hook::config::LoadInMemoryConfig",
+            [this](const app_hook::config::ConfigBase& base_config) -> std::unique_ptr<app_hook::task::IHookTask> {
+                if (const auto* load_config = dynamic_cast<const app_hook::config::LoadInMemoryConfig*>(&base_config)) {
+                    auto task = app_hook::task::make_task<app_hook::memory::LoadInMemoryTask>(*load_config);
+                    task->setHost(host_);
+                    return task;
+                }
+                return nullptr;
+            }
+        );
+        
+        if (load_in_memory_creator_result != app_hook::plugin::PluginResult::Success) {
+            PLUGIN_LOG_ERROR("Memory Plugin: Failed to register LoadInMemoryTask creator");
+            return load_in_memory_creator_result;
+        }
+        PLUGIN_LOG_INFO("Memory Plugin: LoadInMemoryTask creator registered successfully");
         
         PLUGIN_LOG_INFO("Memory Plugin: Initialized successfully");
         return app_hook::plugin::PluginResult::Success;

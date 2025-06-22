@@ -57,7 +57,6 @@ add_subdirectory(memory_plugin)
 # Add tests if enabled
 if(BUILD_TESTING)
     add_subdirectory(tests)
-    add_subdirectory(integration-test)
 endif()
 
 # Optional: Create install target

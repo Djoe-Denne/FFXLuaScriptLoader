@@ -17,7 +17,9 @@ enum class TaskError {
     copy_failed,
     dependency_not_met,
     patch_failed,
-    unknown_error
+    unknown_error,
+    file_not_found,
+    file_read_error
 };
 
 /// @brief Task result type

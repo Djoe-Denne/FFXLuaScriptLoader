@@ -14,19 +14,21 @@ namespace app_hook::memory {
 struct MemoryRegion {
     std::unique_ptr<std::uint8_t[]> data;
     std::size_t size;
+    std::size_t original_size;
     std::uintptr_t original_address;
     std::string description;
     
     /// @brief Default constructor
-    MemoryRegion() : data(nullptr), size(0), original_address(0), description() {}
+    MemoryRegion() : data(nullptr), size(0), original_size(0), original_address(0), description() {}
     
     /// @brief Constructor with parameters
     /// @param sz Size of the memory region
     /// @param addr Original address
     /// @param desc Description of the memory region
-    MemoryRegion(std::size_t sz, std::uintptr_t addr, std::string desc)
+    MemoryRegion(std::size_t sz, std::size_t original_sz, std::uintptr_t addr, std::string desc)
         : data(std::make_unique<std::uint8_t[]>(sz))
         , size(sz)
+        , original_size(original_sz)
         , original_address(addr)
         , description(std::move(desc)) {}
         

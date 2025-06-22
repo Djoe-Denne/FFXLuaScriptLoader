@@ -33,8 +33,10 @@ set(SOURCES
     src/memory_plugin.cpp
     src/memory_config_loader.cpp
     src/patch_config_loader.cpp
+    src/load_in_memory_config_loader.cpp
     src/patch_memory.cpp
     src/copy_memory.cpp
+    src/load_in_memory.cpp
 )
 
 # Create memory_plugin.dll

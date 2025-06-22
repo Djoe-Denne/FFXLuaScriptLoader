@@ -24,6 +24,7 @@ task::TaskResult CopyMemoryTask::execute() {
             // Create new memory region
             MemoryRegion region{
                 config_.new_size(), 
+                config_.original_size(),
                 config_.address(), 
                 config_.description()
             };

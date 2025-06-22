@@ -1,0 +1,6 @@
+[load.NEW_MAGIC]
+binary = "mods/test_magic/new_magic.bin"
+offsetSecurity = "0x0"
+description = "Add new magic to the gam:e by loading binary file directly at the end of previous zone (address + 3420 bytes)"
+# Context configuration - read from the memory region created by the copy task
+readFromContext = "ff8.magic.k_magic_data"

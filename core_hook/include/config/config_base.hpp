@@ -13,6 +13,7 @@ enum class ConfigType : std::uint8_t {
     Unknown = 0,
     Memory,     ///< Memory expansion configuration
     Patch,      ///< Instruction patch configuration
+    Load,       ///< Load binary data configuration
     Script,     ///< Script configuration (future)
     Audio,      ///< Audio configuration (future)
     Graphics    ///< Graphics configuration (future)
@@ -25,6 +26,7 @@ enum class ConfigType : std::uint8_t {
     switch (type) {
         case ConfigType::Memory:   return "memory";
         case ConfigType::Patch:    return "patch";
+        case ConfigType::Load:     return "load";
         case ConfigType::Script:   return "script";
         case ConfigType::Audio:    return "audio";
         case ConfigType::Graphics: return "graphics";
@@ -39,6 +41,7 @@ enum class ConfigType : std::uint8_t {
 [[nodiscard]] constexpr ConfigType from_string(std::string_view type_str) noexcept {
     if (type_str == "memory")   return ConfigType::Memory;
     if (type_str == "patch")    return ConfigType::Patch;
+    if (type_str == "load")     return ConfigType::Load;
     if (type_str == "script")   return ConfigType::Script;
     if (type_str == "audio")    return ConfigType::Audio;
     if (type_str == "graphics") return ConfigType::Graphics;
