@@ -88,15 +88,3 @@ The DLL will log which configuration source it's using:
 
 Check `logs/app_hook.log` for detailed information about the configuration being used.
 
-## Error Handling
-
-- If the injector fails to write the configuration file, it will exit with an error
-- If the DLL cannot read the configuration file, it falls back to default paths
-- All configuration-related errors are logged to the DLL log file
-
-## Compatibility
-
-This change is fully backward compatible:
-- Existing usage without parameters continues to work with default paths
-- The DLL will fall back to hardcoded defaults if no injector config is found
-- Legacy scripts and deployment processes remain unaffected 

@@ -45,7 +45,7 @@ This will:
 Inject a custom hook DLL:
 
 ```bash
-app_injector.exe myapp.exe 
+app_injector.exe myapp.exe custom_hook.dll
 ```
 
 ## Advanced Usage
@@ -63,6 +63,9 @@ app_injector.exe myapp.exe --plugin-dir my_plugins
 
 # Both custom directories
 app_injector.exe myapp.exe --config-dir my_config --plugin-dir my_plugins
+
+# Custom DLL with custom directories
+app_injector.exe myapp.exe my_hook.dll --config-dir my_config --plugin-dir my_plugins
 ```
 
 ### Process Discovery Options
