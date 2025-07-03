@@ -61,6 +61,8 @@ add_executable(app_hook_tests ${TEST_SOURCES})
 # Include directories
 target_include_directories(app_hook_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/core_hook/include
+    ${CMAKE_SOURCE_DIR}/memory_plugin/include
 )
 
 # Link libraries

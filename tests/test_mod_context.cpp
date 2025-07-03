@@ -12,6 +12,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <context/mod_context.hpp>
+#include <memory/memory_region.hpp>
 #include <thread>
 #include <vector>
 #include <chrono>
@@ -21,13 +22,14 @@
 #include <cstdio>
 
 using namespace app_hook::context;
+using namespace app_hook::memory;
 using namespace ::testing;
 
 namespace {
 
 /// @brief Helper function to create test memory region
 [[nodiscard]] MemoryRegion create_test_region(std::size_t size, std::uintptr_t addr, const std::string& desc) {
-    MemoryRegion region(size, addr, desc);
+    MemoryRegion region(size, size, addr, desc);
     
     // Fill with test pattern
     for (std::size_t i = 0; i < size; ++i) {
@@ -43,7 +45,7 @@ namespace {
 class MemoryRegionTest : public Test {
 protected:
     void SetUp() override {
-        region_ = std::make_unique<MemoryRegion>(1024, 0x12345678, "Test Memory Region");
+        region_ = std::make_unique<MemoryRegion>(1024, 1024, 0x12345678, "Test Memory Region");
         
         // Fill with test data
         for (std::size_t i = 0; i < 1024; ++i) {
@@ -89,6 +91,7 @@ TEST_F(MemoryRegionTest, DefaultConstruction) {
     MemoryRegion default_region;
     
     EXPECT_EQ(default_region.size, 0);
+    EXPECT_EQ(default_region.original_size, 0);
     EXPECT_EQ(default_region.original_address, 0);
     EXPECT_TRUE(default_region.description.empty());
     EXPECT_EQ(default_region.data.get(), nullptr);
@@ -113,7 +116,7 @@ TEST_F(MemoryRegionTest, MoveSemantics) {
 }
 
 TEST_F(MemoryRegionTest, MoveAssignment) {
-    MemoryRegion target_region(512, 0x87654321, "Target Region");
+    MemoryRegion target_region(512, 512, 0x87654321, "Target Region");
     
     const auto source_size = region_->size;
     const auto source_address = region_->original_address;
@@ -241,9 +244,9 @@ TEST_F(ModContextTest, StoreAndRetrieveMemoryRegion) {
     auto region = create_test_region(256, 0x10000000, "Test Store Region");
     const auto* original_data = region.data.get();
     
-    context_->store_memory_region("test_key_1", std::move(region));
+    context_->store_data("test_key_1", std::move(region));
     
-    const auto* retrieved = context_->get_memory_region("test_key_1");
+    const auto* retrieved = context_->get_data<MemoryRegion>("test_key_1");
     ASSERT_NE(retrieved, nullptr);
     
     EXPECT_EQ(retrieved->size, 256);
@@ -253,35 +256,35 @@ TEST_F(ModContextTest, StoreAndRetrieveMemoryRegion) {
 }
 
 TEST_F(ModContextTest, RetrieveNonExistentRegion) {
-    const auto* retrieved = context_->get_memory_region("non_existent_key");
+    const auto* retrieved = context_->get_data<MemoryRegion>("non_existent_key");
     EXPECT_EQ(retrieved, nullptr);
 }
 
 TEST_F(ModContextTest, HasMemoryRegion) {
     auto region = create_test_region(128, 0x20000000, "Test Has Region");
     
-    EXPECT_FALSE(context_->has_memory_region("test_key_2"));
+    EXPECT_FALSE(context_->has_data("test_key_2"));
     
-    context_->store_memory_region("test_key_2", std::move(region));
+    context_->store_data("test_key_2", std::move(region));
     
-    EXPECT_TRUE(context_->has_memory_region("test_key_2"));
-    EXPECT_FALSE(context_->has_memory_region("test_key_3"));
+    EXPECT_TRUE(context_->has_data("test_key_2"));
+    EXPECT_FALSE(context_->has_data("test_key_3"));
 }
 
 TEST_F(ModContextTest, OverwriteExistingRegion) {
     // Store first region
     auto region1 = create_test_region(256, 0x30000000, "First Region");
-    context_->store_memory_region("overwrite_key", std::move(region1));
+    context_->store_data("overwrite_key", std::move(region1));
     
-    const auto* first_retrieval = context_->get_memory_region("overwrite_key");
+    const auto* first_retrieval = context_->get_data<MemoryRegion>("overwrite_key");
     ASSERT_NE(first_retrieval, nullptr);
     EXPECT_EQ(first_retrieval->description, "First Region");
     
     // Overwrite with second region
     auto region2 = create_test_region(512, 0x40000000, "Second Region");
-    context_->store_memory_region("overwrite_key", std::move(region2));
+    context_->store_data("overwrite_key", std::move(region2));
     
-    const auto* second_retrieval = context_->get_memory_region("overwrite_key");
+    const auto* second_retrieval = context_->get_data<MemoryRegion>("overwrite_key");
     ASSERT_NE(second_retrieval, nullptr);
     EXPECT_EQ(second_retrieval->description, "Second Region");
     EXPECT_EQ(second_retrieval->size, 512);
@@ -307,7 +310,7 @@ TEST_F(ModContextTest, ConcurrentStoreAndRetrieve) {
                 const std::string desc = "Thread " + std::to_string(t) + " Region " + std::to_string(r);
                 
                 auto region = create_test_region(64 + r, 0x50000000 + t * 1000 + r, desc);
-                context_->store_memory_region(key, std::move(region));
+                context_->store_data(key, std::move(region));
             }
         });
     }
@@ -322,9 +325,9 @@ TEST_F(ModContextTest, ConcurrentStoreAndRetrieve) {
             const std::string key = "thread_" + std::to_string(t) + "_region_" + std::to_string(r);
             const std::string expected_desc = "Thread " + std::to_string(t) + " Region " + std::to_string(r);
             
-            EXPECT_TRUE(context_->has_memory_region(key));
+            EXPECT_TRUE(context_->has_data(key));
             
-            const auto* region = context_->get_memory_region(key);
+            const auto* region = context_->get_data<MemoryRegion>(key);
             ASSERT_NE(region, nullptr);
             EXPECT_EQ(region->description, expected_desc);
             EXPECT_EQ(region->size, 64 + r);
@@ -339,7 +342,7 @@ TEST_F(ModContextTest, ConcurrentReadAccess) {
         const std::string key = "read_test_" + std::to_string(i);
         const std::string desc = "Read Test Region " + std::to_string(i);
         auto region = create_test_region(128 + i * 64, 0x60000000 + i * 0x1000, desc);
-        context_->store_memory_region(key, std::move(region));
+        context_->store_data(key, std::move(region));
     }
     
     // Launch multiple reader threads
@@ -357,7 +360,7 @@ TEST_F(ModContextTest, ConcurrentReadAccess) {
                 const int region_index = r % num_regions;
                 const std::string key = "read_test_" + std::to_string(region_index);
                 
-                if (const auto* region = context_->get_memory_region(key); region != nullptr) {
+                if (const auto* region = context_->get_data<MemoryRegion>(key); region != nullptr) {
                     successful_reads.fetch_add(1, std::memory_order_relaxed);
                     
                     // Verify data integrity
@@ -386,10 +389,10 @@ TEST_F(ModContextTest, ConcurrentReadAccess) {
 
 TEST_F(ModContextTest, ConstAccess) {
     auto region = create_test_region(256, 0x70000000, "Const Test Region");
-    context_->store_memory_region("const_test_key", std::move(region));
+    context_->store_data("const_test_key", std::move(region));
     
     const auto* const_context = context_;
-    const auto* retrieved = const_context->get_memory_region("const_test_key");
+    const auto* retrieved = const_context->get_data<MemoryRegion>("const_test_key");
     
     ASSERT_NE(retrieved, nullptr);
     EXPECT_EQ(retrieved->size, 256);
@@ -408,9 +411,9 @@ TEST_F(ModContextTest, LargeMemoryRegions) {
     constexpr std::size_t large_size = 1024 * 1024;  // 1MB
     
     auto large_region = create_test_region(large_size, 0x80000000, "Large Test Region");
-    context_->store_memory_region("large_region_key", std::move(large_region));
+    context_->store_data("large_region_key", std::move(large_region));
     
-    const auto* retrieved = context_->get_memory_region("large_region_key");
+    const auto* retrieved = context_->get_data<MemoryRegion>("large_region_key");
     ASSERT_NE(retrieved, nullptr);
     EXPECT_EQ(retrieved->size, large_size);
     
@@ -428,15 +431,15 @@ TEST_F(ModContextTest, ManySmallRegions) {
         const std::string key = "small_region_" + std::to_string(i);
         const std::string desc = "Small Region " + std::to_string(i);
         auto region = create_test_region(16, 0x90000000 + i * 16, desc);
-        context_->store_memory_region(key, std::move(region));
+        context_->store_data(key, std::move(region));
     }
     
     // Verify all regions exist
     for (int i = 0; i < num_regions; ++i) {
         const std::string key = "small_region_" + std::to_string(i);
-        EXPECT_TRUE(context_->has_memory_region(key));
+        EXPECT_TRUE(context_->has_data(key));
         
-        const auto* region = context_->get_memory_region(key);
+        const auto* region = context_->get_data<MemoryRegion>(key);
         ASSERT_NE(region, nullptr);
         EXPECT_EQ(region->size, 16);
     }

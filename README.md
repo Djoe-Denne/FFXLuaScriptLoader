@@ -36,24 +36,6 @@ Output files:
 - `build/bin/app_hook.dll` - Main hook library
 - `build/bin/app_injector.exe` - DLL injector
 
-## Running
-
-1. Inject into target application:
-```bash
-app_injector.exe <process_name> [dll_name]
-```
-
-Examples:
-```bash
-# Inject app_hook.dll into myapp.exe
-app_injector.exe myapp.exe
-
-# Inject custom_hook.dll into game.exe
-app_injector.exe game.exe
-
-# Launch target application after starting injector
-```
-
 2. The injector will wait for the target process to start and automatically inject the DLL
 
 ## Testing
