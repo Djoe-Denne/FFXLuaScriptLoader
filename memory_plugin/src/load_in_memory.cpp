@@ -5,6 +5,8 @@
 #include "plugin/plugin_interface.hpp"
 #include <filesystem>
 #include <fstream>
+#include <cstdio>
+#include <cstring>
 
 namespace app_hook::memory {
 
@@ -36,6 +38,7 @@ task::TaskResult LoadInMemoryTask::execute() {
         
         // Determine base address for loading
         std::uintptr_t base_address = 0;
+        std::uintptr_t injection_address = 0;
         std::size_t total_size = static_cast<std::size_t>(file_size) + config_.offset_security();
         
         if (config_.reads_from_context()) {
@@ -52,7 +55,25 @@ task::TaskResult LoadInMemoryTask::execute() {
                 return std::unexpected(task::TaskError::invalid_address);
             }
             
-            base_address = reinterpret_cast<std::uintptr_t>(memory_region->data.get()) + memory_region->original_size + config_.offset_security();
+            // Log detailed memory region information for Cheat Engine inspection
+            const std::uintptr_t region_base = reinterpret_cast<std::uintptr_t>(memory_region->data.get());
+            injection_address = region_base + memory_region->original_size + config_.offset_security();
+            base_address = injection_address;
+            
+            PLUGIN_LOG_INFO("=== MEMORY INJECTION DETAILS ===");
+            PLUGIN_LOG_INFO("Context Memory Region: '{}'", context_key);
+            PLUGIN_LOG_INFO("  Original Address: 0x{:016X}", memory_region->original_address);
+            PLUGIN_LOG_INFO("  Allocated Base:   0x{:016X}", region_base);
+            PLUGIN_LOG_INFO("  Region Size:      {} bytes (0x{:X})", memory_region->size, memory_region->size);
+            PLUGIN_LOG_INFO("  Original Size:    {} bytes (0x{:X})", memory_region->original_size, memory_region->original_size);
+            PLUGIN_LOG_INFO("Binary Injection Details:");
+            PLUGIN_LOG_INFO("  File:             {}", config_.binary_path());
+            PLUGIN_LOG_INFO("  File Size:        {} bytes (0x{:X})", file_size, file_size);
+            PLUGIN_LOG_INFO("  Offset Security:  {} bytes (0x{:X})", config_.offset_security(), config_.offset_security());
+            PLUGIN_LOG_INFO("  Injection Address: 0x{:016X} [CHEAT ENGINE TARGET]", injection_address);
+            PLUGIN_LOG_INFO("  End Address:      0x{:016X}", injection_address + file_size);
+            PLUGIN_LOG_INFO("================================");
+            
             PLUGIN_LOG_DEBUG("Using context-based address: 0x{:X} (region size: {}, offset: 0x{:X})", 
                            base_address, memory_region->size, config_.offset_security());
         } else {
@@ -85,20 +106,32 @@ task::TaskResult LoadInMemoryTask::execute() {
         
         PLUGIN_LOG_DEBUG("Successfully loaded {} bytes from binary file", file_size);
         
-        // Zero-initialize the offset security area if any
-        if (config_.offset_security() > 0) {
-            std::fill_n(region.data.get() + file_size, config_.offset_security(), std::uint8_t{0});
-            PLUGIN_LOG_DEBUG("Zero-initialized {} security offset bytes", config_.offset_security());
-        }
+        // CRITICAL: Actually inject the data into the target memory address!
+        PLUGIN_LOG_INFO("Injecting {} bytes to target address 0x{:016X}", file_size, injection_address);
         
-        // Log first few bytes for debugging
+        // Copy the loaded data to the injection address
+        std::memcpy(reinterpret_cast<void*>(injection_address), region.data.get(), static_cast<std::size_t>(file_size));
+        
+        PLUGIN_LOG_INFO("Successfully injected {} bytes into memory at 0x{:016X}", file_size, injection_address);
+        
+        // Verify injection by reading back from the target address
         if (file_size > 0) {
             const auto preview_size = std::min(static_cast<std::size_t>(16), static_cast<std::size_t>(file_size));
             std::string hex_preview;
+            
+            // Read from the actual injected memory location for verification
+            const std::uint8_t* injected_data = reinterpret_cast<const std::uint8_t*>(injection_address);
             for (std::size_t i = 0; i < preview_size; ++i) {
-                hex_preview += std::format("{:02X} ", region.data.get()[i]);
+                char hex_byte[8];
+                std::snprintf(hex_byte, sizeof(hex_byte), "%02X ", injected_data[i]);
+                hex_preview += hex_byte;
             }
-            PLUGIN_LOG_DEBUG("First {} bytes loaded: {}", preview_size, hex_preview);
+            PLUGIN_LOG_INFO("INJECTION VERIFIED: First {} bytes at 0x{:016X}: {}", preview_size, injection_address, hex_preview);
+            
+            // Additional Cheat Engine inspection info
+            const std::size_t pattern_length = std::min(hex_preview.size(), static_cast<std::size_t>(23));
+            PLUGIN_LOG_INFO("CHEAT ENGINE: Search for pattern '{}' at address 0x{:016X}", 
+                          hex_preview.substr(0, pattern_length), injection_address);
         }
         
         // Store in context if configured
@@ -119,7 +152,8 @@ task::TaskResult LoadInMemoryTask::execute() {
             }
         }
         
-        PLUGIN_LOG_INFO("Successfully executed LoadInMemoryTask for key '{}'", config_.key());
+        PLUGIN_LOG_INFO("Successfully executed LoadInMemoryTask for key '{}' - Data injected at 0x{:016X}", 
+                       config_.key(), injection_address);
         return {};
         
     } catch (const std::filesystem::filesystem_error& e) {

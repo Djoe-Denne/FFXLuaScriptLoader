@@ -1,6 +1,7 @@
 [load.NEW_MAGIC]
 binary = "./mods/xtender/magic/new_magic_english.resources.bin"
 offsetSecurity = "0x1FF" # keep 511 bytes for potential localization taking more space than english 1584 bytes
+copyAfter = "0x0047D343"
 description = "Add new magic text to the game by loading binary file directly at the end of previous zone (address + 1584 bytes + offsetSecurity)"
 # Context configuration - read from the memory region created by the copy task
 readFromContext = "ff8.magic.text_data"
