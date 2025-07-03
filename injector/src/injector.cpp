@@ -219,8 +219,8 @@ namespace injector {
         processName = argv[1];
         dllName = "app_hook.dll";  // default
         configDir = "config";      // default
-        pluginDir = "mods/xtender/tasks";  // default
-        
+        pluginDir = "tasks";  // default
+
         // Parse remaining arguments
         for (int i = 2; i < argc; ++i) {
             std::string arg = argv[i];

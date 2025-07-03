@@ -23,8 +23,8 @@ Example: Expands data structures from fixed sizes to larger memory regions by au
 ## Building
 
 ```bash
-git clone https://github.com/Djoe-Denne/LegacySoftwareExtension.git
-cd LegacySoftwareExtension
+git clone https://github.com/Djoe-Denne/SoftwareExtension.git
+cd SoftwareExtension
 
 cmake -Bcmake -B build -A Win32 -DBUILD_TESTING=OFF
 
