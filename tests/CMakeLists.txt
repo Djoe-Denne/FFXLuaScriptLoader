@@ -54,13 +54,26 @@ set(TEST_SOURCES
     test_copy_memory.cpp
     test_patch_memory.cpp
     test_memory_configs.cpp
+    test_load_in_memory_config_loader.cpp
+    test_load_in_memory_task.cpp
+    test_load_in_memory_config.cpp
     
     # Mock implementations
     mock_plugin_host.cpp
 )
 
+# Memory plugin source files for testing
+set(MEMORY_PLUGIN_SOURCES
+    ${CMAKE_SOURCE_DIR}/memory_plugin/src/memory_config_loader.cpp
+    ${CMAKE_SOURCE_DIR}/memory_plugin/src/patch_config_loader.cpp
+    ${CMAKE_SOURCE_DIR}/memory_plugin/src/load_in_memory_config_loader.cpp
+    ${CMAKE_SOURCE_DIR}/memory_plugin/src/patch_memory.cpp
+    ${CMAKE_SOURCE_DIR}/memory_plugin/src/copy_memory.cpp
+    ${CMAKE_SOURCE_DIR}/memory_plugin/src/load_in_memory.cpp
+)
+
 # Create test executable
-add_executable(app_hook_tests ${TEST_SOURCES})
+add_executable(app_hook_tests ${TEST_SOURCES} ${MEMORY_PLUGIN_SOURCES})
 
 # Include directories
 target_include_directories(app_hook_tests PRIVATE

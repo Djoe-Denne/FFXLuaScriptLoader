@@ -52,8 +52,8 @@ TEST_F(PluginManagerTest, UnloadNonExistentPlugin) {
     
     auto result = manager.unload_plugin("non_existent");
     
-    // Should fail gracefully
-    EXPECT_EQ(result, PluginResult::Failed);
+    // Should return NotFound when plugin doesn't exist
+    EXPECT_EQ(result, PluginResult::NotFound);
 }
 
 TEST_F(PluginManagerTest, IsPluginLoadedNonExistent) {

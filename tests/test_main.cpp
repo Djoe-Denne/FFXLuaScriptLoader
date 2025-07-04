@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
     ::testing::InitGoogleMock(&argc, argv);
     
     // Initialize logging for tests
-    app_hook::util::initialize_logging("test_log.txt", 1); // Debug level
+    app_hook::util::initialize_logging("test_log.log", 1); // Debug level
     
     std::cout << "Running FFScriptLoader Unit Tests..." << std::endl;
     std::cout << "Target Architecture: x32 (32-bit)" << std::endl;
