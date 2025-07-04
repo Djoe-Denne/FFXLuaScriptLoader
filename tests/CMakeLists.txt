@@ -48,6 +48,7 @@ set(TEST_SOURCES
     test_task_manager.cpp
     test_plugin_manager.cpp
     test_hook_task.cpp
+    test_hook_factory.cpp
     
     # Memory plugin tests
     test_memory_region.cpp

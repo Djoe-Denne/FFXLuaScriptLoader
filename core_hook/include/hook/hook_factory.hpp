@@ -60,12 +60,14 @@ private:
     /// @param task_hook_addresses Map tracking where each task was hooked
     /// @param task_info_map Map of task keys to task information for followBy lookup
     /// @param manager Hook manager to add tasks to
+    /// @param config_dir Config directory to resolve relative paths
     /// @return Result of operation
     [[nodiscard]] static FactoryResult process_task_with_dependencies(
         const config::TaskInfo& task,
         std::unordered_map<std::string, std::uintptr_t>& task_hook_addresses,
         const std::unordered_map<std::string, const config::TaskInfo*>& task_info_map,
-        HookManager& manager);
+        HookManager& manager,
+        const std::string& config_dir);
     
     /// @brief Extract task key from config file path
     /// @param config_file Path to config file

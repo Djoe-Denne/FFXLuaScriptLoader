@@ -10,7 +10,7 @@ description = "Main configuration file that references all task configurations"
 name = "Magic Expansion"
 description = "Tasks that expand memory regions for FF8 modding"
 type = "memory"
-config_file = "config/tasks/copy_magic_memory_config.toml"
+config_file = "tasks/copy_magic_memory_config.toml"
 followBy = ["load_new_magic", "magic_patch"]
 enabled = true
 
@@ -19,7 +19,7 @@ enabled = true
 name = "Magic System Patches"
 description = "Pre-patched instructions for magic system modifications"
 type = "patch"
-config_file = "config/tasks/magic_patch.toml"
+config_file = "tasks/magic_patch.toml"
 enabled = true 
 
 # Memory expansion tasks
@@ -27,7 +27,7 @@ enabled = true
 name = "Magic Text Expansion"
 description = "Tasks that expand memory regions for FF8 modding"
 type = "memory"
-config_file = "config/tasks/copy_magic_text_memory_config.toml"
+config_file = "tasks/copy_magic_text_memory_config.toml"
 followBy = ["load_new_magic_text", "magic_text_patch"]
 enabled = true
 
@@ -36,7 +36,7 @@ enabled = true
 name = "Magic Text Patches"
 description = "Pre-patched instructions for magic text modifications"
 type = "patch"
-config_file = "config/tasks/magic_text_patch.toml"
+config_file = "tasks/magic_text_patch.toml"
 enabled = true
 
 # Load new magic
@@ -44,7 +44,7 @@ enabled = true
 name = "Magic Load"
 description = "Load new magic"
 type = "load"
-config_file = "config/tasks/load_new_magic.toml"
+config_file = "tasks/load_new_magic.toml"
 enabled = true
 
 # Load new magic text
@@ -52,5 +52,5 @@ enabled = true
 name = "Magic Text Load"
 description = "Load new text for magic"
 type = "load"
-config_file = "config/tasks/load_new_magic_text.toml"
+config_file = "tasks/load_new_magic_text.toml"
 enabled = true

@@ -5,12 +5,18 @@
 #include <functional>
 #include <ranges>
 #include <algorithm>
+#include <filesystem>
 
 namespace app_hook::config {
 
 ConfigResult<std::vector<ConfigPtr>> 
 TaskLoader::load_configs_from_tasks(const std::string& tasks_file_path) {
     LOG_INFO("Loading configs from tasks file: {}", tasks_file_path);
+    
+    // Extract the directory path from the tasks file path
+    std::filesystem::path tasks_dir = std::filesystem::path(tasks_file_path).parent_path();
+    LOG_INFO("TaskLoader::load_configs_from_tasks - Tasks directory: {}", tasks_dir.string());
+    LOG_DEBUG("TaskLoader::load_configs_from_tasks - Tasks file path: {}", tasks_file_path);
     
     // First load the tasks
     auto tasks_result = load_tasks(tasks_file_path);
@@ -22,12 +28,16 @@ TaskLoader::load_configs_from_tasks(const std::string& tasks_file_path) {
     
     // Load configs from each task file using the generic factory
     for (const auto& task : *tasks_result) {
-        LOG_INFO("Loading {} configs from task '{}' file: {}", 
-                 to_string(task.type), task.name, task.config_file);
+        // Resolve config file path relative to tasks directory
+        std::filesystem::path config_file_path = tasks_dir / task.config_file;
+        std::string full_config_path = config_file_path.string();
         
-        auto configs_result = ConfigFactory::load_configs(task.type, task.config_file, task.name);
+        LOG_INFO("Loading {} configs from task '{}' file: {} (resolved from: {})", 
+                 to_string(task.type), task.name, full_config_path, task.config_file);
+        
+        auto configs_result = ConfigFactory::load_configs(task.type, full_config_path, task.name);
         if (!configs_result) {
-            LOG_ERROR("Failed to load configs from task file: {}", task.config_file);
+            LOG_ERROR("Failed to load configs from task file: {}", full_config_path);
             return std::unexpected(configs_result.error());
         }
         
@@ -37,7 +47,7 @@ TaskLoader::load_configs_from_tasks(const std::string& tasks_file_path) {
         }
         
         LOG_INFO("Loaded {} config(s) from task '{}' file: {}", 
-                configs_result->size(), task.name, task.config_file);
+                configs_result->size(), task.name, full_config_path);
     }
     
     LOG_INFO("Successfully loaded {} total config(s) from {} task(s)", 

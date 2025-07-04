@@ -2,6 +2,7 @@
 #include "../../include/util/logger.hpp"
 #include <algorithm>
 #include <ranges>
+#include <filesystem>
 
 namespace app_hook::hook {
 
@@ -10,6 +11,10 @@ FactoryResult HookFactory::create_hooks_from_tasks(
     HookManager& manager) {
     
     LOG_INFO("Creating hooks from tasks configuration: {}", tasks_path);
+    
+    // Extract the config directory from the tasks file path
+    std::filesystem::path config_dir = std::filesystem::path(tasks_path).parent_path();
+    LOG_INFO("Config directory resolved as: {}", config_dir.string());
     
     // Load task information
     auto tasks_result = config::TaskLoader::load_tasks(tasks_path);
@@ -50,7 +55,7 @@ FactoryResult HookFactory::create_hooks_from_tasks(
         
         LOG_INFO("Processing task '{}' ({})", task_it->name, task_key);
         
-        if (auto result = process_task_with_dependencies(*task_it, task_hook_addresses, task_info_map, manager); !result) {
+        if (auto result = process_task_with_dependencies(*task_it, task_hook_addresses, task_info_map, manager, config_dir.string()); !result) {
             LOG_ERROR("Failed to process task '{}' ({})", task_it->name, task_key);
             return result;
         }
@@ -109,14 +114,36 @@ FactoryResult HookFactory::process_task_with_dependencies(
     const config::TaskInfo& task,
     std::unordered_map<std::string, std::uintptr_t>& task_hook_addresses,
     const std::unordered_map<std::string, const config::TaskInfo*>& task_info_map,
-    HookManager& manager) {
+    HookManager& manager,
+    const std::string& config_dir) {
     
     LOG_DEBUG("Processing task '{}' of type '{}'", task.name, to_string(task.type));
     
+    // Resolve config file path relative to config directory
+    std::filesystem::path config_file_path = std::filesystem::path(config_dir) / task.config_file;
+    std::string full_config_path = config_file_path.string();
+    
+    LOG_INFO("Loading configs for task '{}' from: {} (resolved from: {})", 
+             task.name, full_config_path, task.config_file);
+    LOG_DEBUG("  Config directory: {}", config_dir);
+    LOG_DEBUG("  Relative config file: {}", task.config_file);
+    LOG_DEBUG("  Full config path: {}", full_config_path);
+    
+    // Check if the config file exists
+    if (!std::filesystem::exists(config_file_path)) {
+        LOG_ERROR("Config file does not exist: {}", full_config_path);
+        LOG_ERROR("  Config directory: {}", config_dir);
+        LOG_ERROR("  Relative path: {}", task.config_file);
+        LOG_ERROR("  Working directory: {}", std::filesystem::current_path().string());
+        return std::unexpected(FactoryError::config_load_failed);
+    } else {
+        LOG_DEBUG("Config file exists: {}", full_config_path);
+    }
+    
     // Load configurations for this task using the generic factory
-    auto configs_result = config::ConfigFactory::load_configs(task.type, task.config_file, task.name);
+    auto configs_result = config::ConfigFactory::load_configs(task.type, full_config_path, task.name);
     if (!configs_result) {
-        LOG_ERROR("Failed to load configs for task '{}'", task.name);
+        LOG_ERROR("Failed to load configs for task '{}' from: {}", task.name, full_config_path);
         return std::unexpected(FactoryError::config_load_failed);
     }
     
