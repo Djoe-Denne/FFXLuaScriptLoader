@@ -45,55 +45,11 @@ Output files:
 Build and run the unit test suite:
 
 ```bash
-# Configure using preset (testing enabled by default)
-cmake --preset=default-x32
-
 # Build test executable
 cmake --build build --target app_hook_tests
 
 # Run all tests
-build/bin/Debug/app_hook_tests.exe
-```
-
-### Integration Test
-
-Run the integration test to verify DLL injection and plugin loading work correctly:
-
-```bash
-# Build everything including integration test
-cmake --preset=default-x32
-cmake --build build --config Release
-
-# Run automated build and test
-build_and_test.bat
-```
-
-Or run manually:
-
-```bash
-# Navigate to integration test directory
-cd integration-test
-
-# Run the test
-run_test.bat
-```
-
-The integration test:
-- Starts a test application that waits for termination signal
-- Injects the main DLL and test plugin
-- Triggers task execution via Windows events
-- Verifies the plugin can successfully signal app termination
-- Reports TEST PASSED/FAILED based on results
-
-Expected output on success:
-```
-=========================================
-    Integration Test - DLL Injection
-=========================================
-Starting test_app.exe...
-Running injector...
-Waiting for test completion...
-TEST PASSED - App terminated successfully!
+build/bin/tests/Debug/app_hook_tests.exe
 ```
 
 ## Configuration
