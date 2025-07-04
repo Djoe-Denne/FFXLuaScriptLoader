@@ -61,4 +61,8 @@ std::vector<std::string> TaskManager::get_task_names() const {
         | std::ranges::to<std::vector>();
 }
 
+void TaskManager::clear() noexcept {
+    tasks_.clear();
+}
+
 } // namespace app_hook::util 

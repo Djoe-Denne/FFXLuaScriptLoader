@@ -1,446 +1,403 @@
-/**
- * @file test_mod_context.cpp
- * @brief Unit tests for ModContext and MemoryRegion classes
- * 
- * Tests the context management system including:
- * - Memory region creation and management
- * - Thread-safe operations
- * - Singleton behavior
- * - Memory region utilities
- */
-
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
-#include <context/mod_context.hpp>
-#include <memory/memory_region.hpp>
-#include <thread>
-#include <vector>
-#include <chrono>
+#include "context/mod_context.hpp"
 #include <memory>
 #include <string>
-#include <atomic>
-#include <cstdio>
+#include <thread>
+#include <vector>
+#include <future>
+#include <chrono>
 
-using namespace app_hook::context;
-using namespace app_hook::memory;
-using namespace ::testing;
+namespace app_hook::context {
 
-namespace {
-
-/// @brief Helper function to create test memory region
-[[nodiscard]] MemoryRegion create_test_region(std::size_t size, std::uintptr_t addr, const std::string& desc) {
-    MemoryRegion region(size, size, addr, desc);
-    
-    // Fill with test pattern
-    for (std::size_t i = 0; i < size; ++i) {
-        region.data.get()[i] = static_cast<std::uint8_t>(i % 256);
-    }
-    
-    return region;
-}
-
-} // anonymous namespace
-
-/// @brief Test fixture for MemoryRegion tests
-class MemoryRegionTest : public Test {
+class ModContextTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        region_ = std::make_unique<MemoryRegion>(1024, 1024, 0x12345678, "Test Memory Region");
-        
-        // Fill with test data
-        for (std::size_t i = 0; i < 1024; ++i) {
-            region_->data.get()[i] = static_cast<std::uint8_t>((i * 7) % 256);
+        // Clear any existing data before each test
+        auto& context = ModContext::instance();
+        auto keys = context.get_all_keys();
+        for (const auto& key : keys) {
+            context.remove_data(key);
         }
-    }
-
-    std::unique_ptr<MemoryRegion> region_;
-};
-
-/// @brief Test fixture for ModContext tests
-class ModContextTest : public Test {
-protected:
-    void SetUp() override {
-        // Get fresh instance for each test
-        context_ = &ModContext::instance();
-        
-        // Clear any existing regions (note: this is not ideal in production,
-        // but necessary for isolated testing)
     }
     
     void TearDown() override {
-        // Clean up any test regions
-        // Note: In a real scenario, we'd need a way to clear the context
-        // For now, we'll use unique keys to avoid conflicts
+        // Clean up after each test
+        auto& context = ModContext::instance();
+        auto keys = context.get_all_keys();
+        for (const auto& key : keys) {
+            context.remove_data(key);
+        }
     }
-
-    ModContext* context_;
 };
 
-// =============================================================================
-// MemoryRegion Basic Tests
-// =============================================================================
-
-TEST_F(MemoryRegionTest, BasicConstruction) {
-    EXPECT_EQ(region_->size, 1024);
-    EXPECT_EQ(region_->original_address, 0x12345678);
-    EXPECT_EQ(region_->description, "Test Memory Region");
-    EXPECT_NE(region_->data.get(), nullptr);
-}
-
-TEST_F(MemoryRegionTest, DefaultConstruction) {
-    MemoryRegion default_region;
+// Test data structures
+struct TestData {
+    int value;
+    std::string name;
     
-    EXPECT_EQ(default_region.size, 0);
-    EXPECT_EQ(default_region.original_size, 0);
-    EXPECT_EQ(default_region.original_address, 0);
-    EXPECT_TRUE(default_region.description.empty());
-    EXPECT_EQ(default_region.data.get(), nullptr);
-}
-
-TEST_F(MemoryRegionTest, MoveSemantics) {
-    const auto original_size = region_->size;
-    const auto original_address = region_->original_address;
-    const auto original_description = region_->description;
-    const auto* original_data_ptr = region_->data.get();
+    TestData(int v, std::string n) : value(v), name(std::move(n)) {}
     
-    // Move construct
-    MemoryRegion moved_region = std::move(*region_);
-    
-    EXPECT_EQ(moved_region.size, original_size);
-    EXPECT_EQ(moved_region.original_address, original_address);
-    EXPECT_EQ(moved_region.description, original_description);
-    EXPECT_EQ(moved_region.data.get(), original_data_ptr);
-    
-    // Original should be in moved-from state
-    EXPECT_EQ(region_->data.get(), nullptr);
-}
-
-TEST_F(MemoryRegionTest, MoveAssignment) {
-    MemoryRegion target_region(512, 512, 0x87654321, "Target Region");
-    
-    const auto source_size = region_->size;
-    const auto source_address = region_->original_address;
-    const auto* source_data_ptr = region_->data.get();
-    
-    target_region = std::move(*region_);
-    
-    EXPECT_EQ(target_region.size, source_size);
-    EXPECT_EQ(target_region.original_address, source_address);
-    EXPECT_EQ(target_region.data.get(), source_data_ptr);
-    
-    EXPECT_EQ(region_->data.get(), nullptr);
-}
-
-// =============================================================================
-// MemoryRegion Span Tests
-// =============================================================================
-
-TEST_F(MemoryRegionTest, SpanAccess) {
-    auto span = region_->span();
-    
-    EXPECT_EQ(span.size(), 1024);
-    EXPECT_EQ(span.data(), region_->data.get());
-    
-    // Test mutable access
-    span[0] = 0xFF;
-    EXPECT_EQ(region_->data.get()[0], 0xFF);
-}
-
-TEST_F(MemoryRegionTest, ConstSpanAccess) {
-    const auto& const_region = *region_;
-    auto const_span = const_region.span();
-    
-    EXPECT_EQ(const_span.size(), 1024);
-    EXPECT_EQ(const_span.data(), region_->data.get());
-    
-    // Verify data integrity
-    for (std::size_t i = 0; i < 10; ++i) {
-        EXPECT_EQ(const_span[i], static_cast<std::uint8_t>((i * 7) % 256));
+    bool operator==(const TestData& other) const {
+        return value == other.value && name == other.name;
     }
+};
+
+class MoveOnlyData {
+public:
+    explicit MoveOnlyData(int val) : value_(val) {}
+    
+    // Non-copyable
+    MoveOnlyData(const MoveOnlyData&) = delete;
+    MoveOnlyData& operator=(const MoveOnlyData&) = delete;
+    
+    // Movable
+    MoveOnlyData(MoveOnlyData&&) = default;
+    MoveOnlyData& operator=(MoveOnlyData&&) = default;
+    
+    int get_value() const { return value_; }
+    
+private:
+    int value_;
+};
+
+TEST_F(ModContextTest, SingletonInstance) {
+    auto& context1 = ModContext::instance();
+    auto& context2 = ModContext::instance();
+    
+    // Both references should point to the same instance
+    EXPECT_EQ(&context1, &context2);
 }
 
-// =============================================================================
-// MemoryRegion String Representation Tests
-// =============================================================================
-
-TEST_F(MemoryRegionTest, ToStringBasic) {
-    const std::string str = region_->to_string();
+TEST_F(ModContextTest, StoreAndGetCopyableData) {
+    auto& context = ModContext::instance();
     
-    EXPECT_THAT(str, HasSubstr("Test Memory Region"));
-    EXPECT_THAT(str, HasSubstr("0x12345678"));
-    EXPECT_THAT(str, HasSubstr("MemoryRegion"));
-}
-
-TEST_F(MemoryRegionTest, ToStringWithOffsetAndCount) {
-    const std::string content_str = region_->to_string(0, 10);
+    const std::string key = "test.copyable";
+    const int value = 42;
     
-    // Should contain hex representation of first 10 bytes
-    EXPECT_THAT(content_str, HasSubstr("0x"));
+    context.store_data(key, value);
     
-    // Check that it contains expected values using more compatible string formatting
-    for (std::size_t i = 0; i < 10; ++i) {
-        const auto expected_value = static_cast<std::uint8_t>((i * 7) % 256);
-        // Use format instead of std::format for better compatibility
-        char hex_buffer[8];
-        std::snprintf(hex_buffer, sizeof(hex_buffer), "0x%02X", expected_value);
-        EXPECT_THAT(content_str, HasSubstr(std::string(hex_buffer)));
-    }
-}
-
-TEST_F(MemoryRegionTest, ToStringEdgeCases) {
-    // Test with invalid offset
-    const std::string invalid_str = region_->to_string(2000, 10);
-    EXPECT_THAT(invalid_str, HasSubstr("Invalid offset"));
-    
-    // Test with count larger than available data
-    const std::string clamped_str = region_->to_string(1020, 10);
-    // Should only show 4 bytes (1024 - 1020 = 4)
-    EXPECT_THAT(clamped_str, HasSubstr("0x"));
-    
-    // Test empty region
-    MemoryRegion empty_region;
-    const std::string empty_str = empty_region.to_string(0, 10);
-    EXPECT_THAT(empty_str, HasSubstr("Invalid offset"));
-}
-
-// =============================================================================
-// ModContext Singleton Tests
-// =============================================================================
-
-TEST(ModContextSingletonTest, SingletonBehavior) {
-    auto& instance1 = ModContext::instance();
-    auto& instance2 = ModContext::instance();
-    
-    EXPECT_EQ(&instance1, &instance2);
-}
-
-TEST(ModContextSingletonTest, ThreadSafeSingleton) {
-    constexpr int num_threads = 10;
-    std::vector<ModContext*> instances(num_threads);
-    std::vector<std::thread> threads;
-    threads.reserve(num_threads);
-    
-    for (int i = 0; i < num_threads; ++i) {
-        threads.emplace_back([&instances, i]() {
-            instances[i] = &ModContext::instance();
-        });
-    }
-    
-    for (auto& thread : threads) {
-        thread.join();
-    }
-    
-    // All instances should be the same
-    for (int i = 1; i < num_threads; ++i) {
-        EXPECT_EQ(instances[0], instances[i]);
-    }
-}
-
-// =============================================================================
-// ModContext Memory Region Management Tests
-// =============================================================================
-
-TEST_F(ModContextTest, StoreAndRetrieveMemoryRegion) {
-    auto region = create_test_region(256, 0x10000000, "Test Store Region");
-    const auto* original_data = region.data.get();
-    
-    context_->store_data("test_key_1", std::move(region));
-    
-    const auto* retrieved = context_->get_data<MemoryRegion>("test_key_1");
+    auto* retrieved = context.get_data<int>(key);
     ASSERT_NE(retrieved, nullptr);
-    
-    EXPECT_EQ(retrieved->size, 256);
-    EXPECT_EQ(retrieved->original_address, 0x10000000);
-    EXPECT_EQ(retrieved->description, "Test Store Region");
-    EXPECT_EQ(retrieved->data.get(), original_data);
+    EXPECT_EQ(*retrieved, value);
 }
 
-TEST_F(ModContextTest, RetrieveNonExistentRegion) {
-    const auto* retrieved = context_->get_data<MemoryRegion>("non_existent_key");
+TEST_F(ModContextTest, StoreAndGetString) {
+    auto& context = ModContext::instance();
+    
+    const std::string key = "test.string";
+    const std::string value = "Hello, World!";
+    
+    context.store_data(key, value);
+    
+    auto* retrieved = context.get_data<std::string>(key);
+    ASSERT_NE(retrieved, nullptr);
+    EXPECT_EQ(*retrieved, value);
+}
+
+TEST_F(ModContextTest, StoreAndGetStringMove) {
+    auto& context = ModContext::instance();
+    
+    const std::string key = "test.string.move";
+    std::string value = "Movable string";
+    std::string value_copy = value;
+    
+    context.store_data(key, std::move(value));
+    
+    auto* retrieved = context.get_data<std::string>(key);
+    ASSERT_NE(retrieved, nullptr);
+    EXPECT_EQ(*retrieved, value_copy);
+    EXPECT_TRUE(value.empty()); // Original should be moved from
+}
+
+TEST_F(ModContextTest, StoreAndGetCustomStruct) {
+    auto& context = ModContext::instance();
+    
+    const std::string key = "test.struct";
+    TestData data(123, "test_name");
+    
+    context.store_data(key, data);
+    
+    auto* retrieved = context.get_data<TestData>(key);
+    ASSERT_NE(retrieved, nullptr);
+    EXPECT_EQ(*retrieved, data);
+}
+
+TEST_F(ModContextTest, StoreAndGetMoveOnlyData) {
+    auto& context = ModContext::instance();
+    
+    const std::string key = "test.move_only";
+    const int expected_value = 999;
+    
+    MoveOnlyData data(expected_value);
+    context.store_data(key, std::move(data));
+    
+    auto* retrieved = context.get_data<MoveOnlyData>(key);
+    ASSERT_NE(retrieved, nullptr);
+    EXPECT_EQ(retrieved->get_value(), expected_value);
+}
+
+TEST_F(ModContextTest, StoreAndGetConstData) {
+    auto& context = ModContext::instance();
+    
+    const std::string key = "test.const";
+    const double value = 3.14159;
+    
+    context.store_data(key, value);
+    
+    const auto& const_context = context;
+    auto* retrieved = const_context.get_data<double>(key);
+    ASSERT_NE(retrieved, nullptr);
+    EXPECT_DOUBLE_EQ(*retrieved, value);
+}
+
+TEST_F(ModContextTest, HasData) {
+    auto& context = ModContext::instance();
+    
+    const std::string key1 = "test.exists";
+    const std::string key2 = "test.missing";
+    
+    EXPECT_FALSE(context.has_data(key1));
+    EXPECT_FALSE(context.has_data(key2));
+    
+    context.store_data(key1, 42);
+    
+    EXPECT_TRUE(context.has_data(key1));
+    EXPECT_FALSE(context.has_data(key2));
+}
+
+TEST_F(ModContextTest, GetDataTypeInfo) {
+    auto& context = ModContext::instance();
+    
+    const std::string key = "test.type_info";
+    const int value = 100;
+    
+    context.store_data(key, value);
+    
+    auto* type_info = context.get_data_type(key);
+    ASSERT_NE(type_info, nullptr);
+    EXPECT_EQ(*type_info, typeid(int));
+}
+
+TEST_F(ModContextTest, GetDataTypeInfoMissing) {
+    auto& context = ModContext::instance();
+    
+    const std::string key = "test.missing";
+    
+    auto* type_info = context.get_data_type(key);
+    EXPECT_EQ(type_info, nullptr);
+}
+
+TEST_F(ModContextTest, RemoveData) {
+    auto& context = ModContext::instance();
+    
+    const std::string key = "test.removable";
+    const std::string value = "to be removed";
+    
+    context.store_data(key, value);
+    EXPECT_TRUE(context.has_data(key));
+    
+    bool removed = context.remove_data(key);
+    EXPECT_TRUE(removed);
+    EXPECT_FALSE(context.has_data(key));
+    
+    auto* retrieved = context.get_data<std::string>(key);
     EXPECT_EQ(retrieved, nullptr);
 }
 
-TEST_F(ModContextTest, HasMemoryRegion) {
-    auto region = create_test_region(128, 0x20000000, "Test Has Region");
+TEST_F(ModContextTest, RemoveNonExistentData) {
+    auto& context = ModContext::instance();
     
-    EXPECT_FALSE(context_->has_data("test_key_2"));
+    const std::string key = "test.non_existent";
     
-    context_->store_data("test_key_2", std::move(region));
-    
-    EXPECT_TRUE(context_->has_data("test_key_2"));
-    EXPECT_FALSE(context_->has_data("test_key_3"));
+    bool removed = context.remove_data(key);
+    EXPECT_FALSE(removed);
 }
 
-TEST_F(ModContextTest, OverwriteExistingRegion) {
-    // Store first region
-    auto region1 = create_test_region(256, 0x30000000, "First Region");
-    context_->store_data("overwrite_key", std::move(region1));
+TEST_F(ModContextTest, GetAllKeys) {
+    auto& context = ModContext::instance();
     
-    const auto* first_retrieval = context_->get_data<MemoryRegion>("overwrite_key");
-    ASSERT_NE(first_retrieval, nullptr);
-    EXPECT_EQ(first_retrieval->description, "First Region");
+    const std::vector<std::string> keys = {
+        "test.key1", "test.key2", "test.key3"
+    };
     
-    // Overwrite with second region
-    auto region2 = create_test_region(512, 0x40000000, "Second Region");
-    context_->store_data("overwrite_key", std::move(region2));
+    // Store data with different keys
+    for (size_t i = 0; i < keys.size(); ++i) {
+        context.store_data(keys[i], static_cast<int>(i));
+    }
     
-    const auto* second_retrieval = context_->get_data<MemoryRegion>("overwrite_key");
-    ASSERT_NE(second_retrieval, nullptr);
-    EXPECT_EQ(second_retrieval->description, "Second Region");
-    EXPECT_EQ(second_retrieval->size, 512);
-    EXPECT_EQ(second_retrieval->original_address, 0x40000000);
+    auto all_keys = context.get_all_keys();
+    EXPECT_EQ(all_keys.size(), keys.size());
+    
+    // Check that all keys are present
+    for (const auto& key : keys) {
+        EXPECT_TRUE(std::find(all_keys.begin(), all_keys.end(), key) != all_keys.end());
+    }
 }
 
-// =============================================================================
-// ModContext Thread Safety Tests
-// =============================================================================
+TEST_F(ModContextTest, GetAllKeysEmpty) {
+    auto& context = ModContext::instance();
+    
+    auto all_keys = context.get_all_keys();
+    EXPECT_TRUE(all_keys.empty());
+}
 
-TEST_F(ModContextTest, ConcurrentStoreAndRetrieve) {
-    constexpr int num_threads = 8;
-    constexpr int regions_per_thread = 10;
+TEST_F(ModContextTest, TypeMismatchReturnsNull) {
+    auto& context = ModContext::instance();
     
-    std::vector<std::thread> threads;
-    threads.reserve(num_threads);
+    const std::string key = "test.type_mismatch";
+    const int stored_value = 42;
     
-    // Launch threads that store memory regions
-    for (int t = 0; t < num_threads; ++t) {
-        threads.emplace_back([this, t, regions_per_thread]() {
-            for (int r = 0; r < regions_per_thread; ++r) {
-                const std::string key = "thread_" + std::to_string(t) + "_region_" + std::to_string(r);
-                const std::string desc = "Thread " + std::to_string(t) + " Region " + std::to_string(r);
+    context.store_data(key, stored_value);
+    
+    // Try to retrieve as wrong type
+    auto* wrong_type = context.get_data<std::string>(key);
+    EXPECT_EQ(wrong_type, nullptr);
+    
+    // Correct type should still work
+    auto* correct_type = context.get_data<int>(key);
+    ASSERT_NE(correct_type, nullptr);
+    EXPECT_EQ(*correct_type, stored_value);
+}
+
+TEST_F(ModContextTest, OverwriteExistingData) {
+    auto& context = ModContext::instance();
+    
+    const std::string key = "test.overwrite";
+    const int initial_value = 100;
+    const int new_value = 200;
+    
+    context.store_data(key, initial_value);
+    
+    auto* retrieved1 = context.get_data<int>(key);
+    ASSERT_NE(retrieved1, nullptr);
+    EXPECT_EQ(*retrieved1, initial_value);
+    
+    // Overwrite with new value
+    context.store_data(key, new_value);
+    
+    auto* retrieved2 = context.get_data<int>(key);
+    ASSERT_NE(retrieved2, nullptr);
+    EXPECT_EQ(*retrieved2, new_value);
+}
+
+TEST_F(ModContextTest, ThreadSafety) {
+    auto& context = ModContext::instance();
+    const int num_threads = 10;
+    const int operations_per_thread = 100;
+    
+    std::vector<std::future<void>> futures;
+    
+    // Launch multiple threads that store and retrieve data
+    for (int thread_id = 0; thread_id < num_threads; ++thread_id) {
+        futures.emplace_back(std::async(std::launch::async, [&context, thread_id, operations_per_thread]() {
+            for (int i = 0; i < operations_per_thread; ++i) {
+                std::string key = "thread." + std::to_string(thread_id) + ".item." + std::to_string(i);
+                int value = thread_id * 1000 + i;
                 
-                auto region = create_test_region(64 + r, 0x50000000 + t * 1000 + r, desc);
-                context_->store_data(key, std::move(region));
-            }
-        });
-    }
-    
-    for (auto& thread : threads) {
-        thread.join();
-    }
-    
-    // Verify all regions were stored correctly
-    for (int t = 0; t < num_threads; ++t) {
-        for (int r = 0; r < regions_per_thread; ++r) {
-            const std::string key = "thread_" + std::to_string(t) + "_region_" + std::to_string(r);
-            const std::string expected_desc = "Thread " + std::to_string(t) + " Region " + std::to_string(r);
-            
-            EXPECT_TRUE(context_->has_data(key));
-            
-            const auto* region = context_->get_data<MemoryRegion>(key);
-            ASSERT_NE(region, nullptr);
-            EXPECT_EQ(region->description, expected_desc);
-            EXPECT_EQ(region->size, 64 + r);
-        }
-    }
-}
-
-TEST_F(ModContextTest, ConcurrentReadAccess) {
-    // Store some regions first
-    constexpr int num_regions = 5;
-    for (int i = 0; i < num_regions; ++i) {
-        const std::string key = "read_test_" + std::to_string(i);
-        const std::string desc = "Read Test Region " + std::to_string(i);
-        auto region = create_test_region(128 + i * 64, 0x60000000 + i * 0x1000, desc);
-        context_->store_data(key, std::move(region));
-    }
-    
-    // Launch multiple reader threads
-    constexpr int num_readers = 10;
-    constexpr int reads_per_thread = 100;
-    
-    std::vector<std::thread> readers;
-    readers.reserve(num_readers);
-    
-    std::atomic<int> successful_reads{0};
-    
-    for (int t = 0; t < num_readers; ++t) {
-        readers.emplace_back([this, &successful_reads, reads_per_thread, num_regions]() {
-            for (int r = 0; r < reads_per_thread; ++r) {
-                const int region_index = r % num_regions;
-                const std::string key = "read_test_" + std::to_string(region_index);
+                // Store data
+                context.store_data(key, value);
                 
-                if (const auto* region = context_->get_data<MemoryRegion>(key); region != nullptr) {
-                    successful_reads.fetch_add(1, std::memory_order_relaxed);
-                    
-                    // Verify data integrity
-                    const auto expected_size = 128 + region_index * 64;
-                    if (region->size == expected_size) {
-                        // Read some data to ensure memory is accessible
-                        volatile auto first_byte = region->data.get()[0];
-                        (void)first_byte;  // Suppress unused variable warning
-                    }
+                // Retrieve and verify
+                auto* retrieved = context.get_data<int>(key);
+                EXPECT_NE(retrieved, nullptr);
+                if (retrieved) {
+                    EXPECT_EQ(*retrieved, value);
                 }
+                
+                // Check existence
+                EXPECT_TRUE(context.has_data(key));
             }
-        });
+        }));
     }
     
-    for (auto& reader : readers) {
-        reader.join();
+    // Wait for all threads to complete
+    for (auto& future : futures) {
+        future.wait();
     }
     
-    // All reads should have been successful
-    EXPECT_EQ(successful_reads.load(), num_readers * reads_per_thread);
+    // Verify all data was stored correctly
+    auto all_keys = context.get_all_keys();
+    EXPECT_EQ(all_keys.size(), num_threads * operations_per_thread);
 }
 
-// =============================================================================
-// ModContext Const Access Tests
-// =============================================================================
+TEST_F(ModContextTest, ThreadSafetyRemoval) {
+    auto& context = ModContext::instance();
+    const int num_items = 1000;
+    
+    // Store initial data
+    for (int i = 0; i < num_items; ++i) {
+        std::string key = "remove.test." + std::to_string(i);
+        context.store_data(key, i);
+    }
+    
+    std::vector<std::future<int>> futures;
+    
+    // Launch multiple threads that try to remove data
+    for (int i = 0; i < num_items; ++i) {
+        futures.emplace_back(std::async(std::launch::async, [&context, i]() {
+            std::string key = "remove.test." + std::to_string(i);
+            return context.remove_data(key) ? 1 : 0;
+        }));
+    }
+    
+    // Count successful removals
+    int successful_removals = 0;
+    for (auto& future : futures) {
+        successful_removals += future.get();
+    }
+    
+    // All items should have been removed exactly once
+    EXPECT_EQ(successful_removals, num_items);
+    
+    // Context should be empty
+    auto all_keys = context.get_all_keys();
+    EXPECT_TRUE(all_keys.empty());
+}
 
-TEST_F(ModContextTest, ConstAccess) {
-    auto region = create_test_region(256, 0x70000000, "Const Test Region");
-    context_->store_data("const_test_key", std::move(region));
+TEST_F(ModContextTest, NonCopyableNonMovable) {
+    // Verify that ModContext cannot be copied or moved
+    EXPECT_FALSE(std::is_copy_constructible_v<ModContext>);
+    EXPECT_FALSE(std::is_copy_assignable_v<ModContext>);
+    EXPECT_FALSE(std::is_move_constructible_v<ModContext>);
+    EXPECT_FALSE(std::is_move_assignable_v<ModContext>);
+}
+
+TEST_F(ModContextTest, LargeDataStorage) {
+    auto& context = ModContext::instance();
     
-    const auto* const_context = context_;
-    const auto* retrieved = const_context->get_data<MemoryRegion>("const_test_key");
+    const std::string key = "test.large_vector";
+    const size_t vector_size = 10000;
     
+    std::vector<int> large_vector;
+    large_vector.reserve(vector_size);
+    for (size_t i = 0; i < vector_size; ++i) {
+        large_vector.push_back(static_cast<int>(i));
+    }
+    
+    context.store_data(key, std::move(large_vector));
+    
+    auto* retrieved = context.get_data<std::vector<int>>(key);
     ASSERT_NE(retrieved, nullptr);
-    EXPECT_EQ(retrieved->size, 256);
-    EXPECT_EQ(retrieved->description, "Const Test Region");
+    EXPECT_EQ(retrieved->size(), vector_size);
     
-    // Test const span access
-    auto const_span = retrieved->span();
-    EXPECT_EQ(const_span.size(), 256);
+    // Verify some values
+    EXPECT_EQ((*retrieved)[0], 0);
+    EXPECT_EQ((*retrieved)[vector_size - 1], static_cast<int>(vector_size - 1));
 }
 
-// =============================================================================
-// Memory Management and Large Data Tests
-// =============================================================================
-
-TEST_F(ModContextTest, LargeMemoryRegions) {
-    constexpr std::size_t large_size = 1024 * 1024;  // 1MB
+TEST_F(ModContextTest, KeyWithSpecialCharacters) {
+    auto& context = ModContext::instance();
     
-    auto large_region = create_test_region(large_size, 0x80000000, "Large Test Region");
-    context_->store_data("large_region_key", std::move(large_region));
+    const std::string key = "test.key.with.dots-and_underscores@symbols#123";
+    const std::string value = "Special key test";
     
-    const auto* retrieved = context_->get_data<MemoryRegion>("large_region_key");
+    context.store_data(key, value);
+    
+    EXPECT_TRUE(context.has_data(key));
+    
+    auto* retrieved = context.get_data<std::string>(key);
     ASSERT_NE(retrieved, nullptr);
-    EXPECT_EQ(retrieved->size, large_size);
-    
-    // Verify data integrity at various points
-    const auto span = retrieved->span();
-    EXPECT_EQ(span[0], 0);
-    EXPECT_EQ(span[255], 255);
-    EXPECT_EQ(span[512], 0);  // 512 % 256 = 0
+    EXPECT_EQ(*retrieved, value);
 }
 
-TEST_F(ModContextTest, ManySmallRegions) {
-    constexpr int num_regions = 1000;
-    
-    for (int i = 0; i < num_regions; ++i) {
-        const std::string key = "small_region_" + std::to_string(i);
-        const std::string desc = "Small Region " + std::to_string(i);
-        auto region = create_test_region(16, 0x90000000 + i * 16, desc);
-        context_->store_data(key, std::move(region));
-    }
-    
-    // Verify all regions exist
-    for (int i = 0; i < num_regions; ++i) {
-        const std::string key = "small_region_" + std::to_string(i);
-        EXPECT_TRUE(context_->has_data(key));
-        
-        const auto* region = context_->get_data<MemoryRegion>(key);
-        ASSERT_NE(region, nullptr);
-        EXPECT_EQ(region->size, 16);
-    }
-} 
+} // namespace app_hook::context 

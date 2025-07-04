@@ -1,0 +1,50 @@
+[2025-07-03 19:04:32.713] [info] [logger.cpp:53] FF8 Hook logging system initialized with level: debug
+[2025-07-03 19:04:32.750] [info] [logger.cpp:63] FF8 Hook logging system shutting down
+[2025-07-04 11:50:27.801] [info] [logger.cpp:53] FF8 Hook logging system initialized with level: debug
+[2025-07-04 11:50:27.838] [info] [config_factory.cpp:19] Registering config loader: TestLoader v1.0.0
+[2025-07-04 11:50:27.838] [info] [config_factory.cpp:38] Unregistering config loader: TestLoader
+[2025-07-04 11:50:27.839] [info] [config_factory.cpp:19] Registering config loader: UnregisterTest v1.0.0
+[2025-07-04 11:50:27.839] [info] [config_factory.cpp:38] Unregistering config loader: UnregisterTest
+[2025-07-04 11:50:27.840] [warning] [config_factory.cpp:34] Loader 'NonExistent' not found for unregistration
+[2025-07-04 11:50:27.840] [info] [config_factory.cpp:19] Registering config loader: SupportTest v1.0.0
+[2025-07-04 11:50:27.840] [info] [config_factory.cpp:38] Unregistering config loader: SupportTest
+[2025-07-04 11:50:27.842] [info] [config_factory.cpp:19] Registering config loader: LoadTest v1.0.0
+[2025-07-04 11:50:27.842] [info] [config_factory.cpp:46] Loading memory configs from file: test_config.toml for task: test_task
+[2025-07-04 11:50:27.842] [info] [config_factory.cpp:38] Unregistering config loader: LoadTest
+[2025-07-04 11:50:27.843] [info] [config_factory.cpp:46] Loading memory configs from file: test_config.toml for task: test_task
+[2025-07-04 11:50:27.843] [error] [config_factory.cpp:50] No registered loader supports configuration type: memory
+[2025-07-04 11:50:27.843] [info] [config_factory.cpp:19] Registering config loader: Loader1 v1.0.0
+[2025-07-04 11:50:27.843] [info] [config_factory.cpp:19] Registering config loader: Loader2 v1.0.0
+[2025-07-04 11:50:27.844] [info] [config_factory.cpp:38] Unregistering config loader: Loader1
+[2025-07-04 11:50:27.844] [info] [config_factory.cpp:38] Unregistering config loader: Loader2
+[2025-07-04 11:50:27.850] [info] [task_loader.cpp:13] Loading configs from tasks file: non_existent_tasks.toml
+[2025-07-04 11:50:27.850] [info] [task_loader.hpp:59] Loading tasks from: non_existent_tasks.toml
+[2025-07-04 11:50:27.851] [error] [task_loader.hpp:96] TOML parse error in file 'non_existent_tasks.toml': File could not be opened for reading at line 0, column 0
+[2025-07-04 11:50:27.853] [info] [task_loader.cpp:13] Loading configs from tasks file: test_tasks.toml
+[2025-07-04 11:50:27.853] [info] [task_loader.hpp:59] Loading tasks from: test_tasks.toml
+[2025-07-04 11:50:27.861] [info] [task_loader.hpp:66] Successfully parsed tasks TOML file: test_tasks.toml
+[2025-07-04 11:50:27.861] [warning] [task_loader.hpp:71] No 'tasks' section found in TOML file: test_tasks.toml
+[2025-07-04 11:50:27.861] [info] [task_loader.cpp:44] Successfully loaded 0 total config(s) from 0 task(s)
+[2025-07-04 11:50:27.865] [info] [plugin_manager.cpp:312] Unloading all 0 plugin(s)
+[2025-07-04 11:50:27.866] [info] [plugin_manager.cpp:323] All plugins unloaded
+[2025-07-04 11:50:27.866] [info] [plugin_manager.cpp:136] Plugin manager initialized with data path: test_data
+[2025-07-04 11:50:27.866] [info] [plugin_manager.cpp:312] Unloading all 0 plugin(s)
+[2025-07-04 11:50:27.866] [info] [plugin_manager.cpp:323] All plugins unloaded
+[2025-07-04 11:50:27.867] [error] [plugin_manager.cpp:142] Plugin manager not initialized
+[2025-07-04 11:50:27.867] [info] [plugin_manager.cpp:312] Unloading all 0 plugin(s)
+[2025-07-04 11:50:27.867] [info] [plugin_manager.cpp:323] All plugins unloaded
+[2025-07-04 11:50:27.868] [warning] [plugin_manager.cpp:293] Plugin 'non_existent' not found
+[2025-07-04 11:50:27.869] [info] [plugin_manager.cpp:312] Unloading all 0 plugin(s)
+[2025-07-04 11:50:27.869] [info] [plugin_manager.cpp:323] All plugins unloaded
+[2025-07-04 11:50:27.869] [info] [plugin_manager.cpp:312] Unloading all 0 plugin(s)
+[2025-07-04 11:50:27.869] [info] [plugin_manager.cpp:323] All plugins unloaded
+[2025-07-04 11:50:27.870] [info] [plugin_manager.cpp:312] Unloading all 0 plugin(s)
+[2025-07-04 11:50:27.870] [info] [plugin_manager.cpp:323] All plugins unloaded
+[2025-07-04 11:50:27.871] [info] [plugin_manager.cpp:312] Unloading all 0 plugin(s)
+[2025-07-04 11:50:27.871] [info] [plugin_manager.cpp:323] All plugins unloaded
+[2025-07-04 11:50:27.871] [info] [plugin_manager.cpp:312] Unloading all 0 plugin(s)
+[2025-07-04 11:50:27.871] [info] [plugin_manager.cpp:323] All plugins unloaded
+[2025-07-04 11:50:27.872] [error] [plugin_manager.cpp:200] Plugin manager not initialized
+[2025-07-04 11:50:27.872] [info] [plugin_manager.cpp:312] Unloading all 0 plugin(s)
+[2025-07-04 11:50:27.872] [info] [plugin_manager.cpp:323] All plugins unloaded
+[2025-07-04 11:50:27.893] [info] [logger.cpp:63] FF8 Hook logging system shutting down

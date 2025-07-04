@@ -26,7 +26,7 @@ Example: Expands data structures from fixed sizes to larger memory regions by au
 git clone https://github.com/Djoe-Denne/SoftwareExtension.git
 cd SoftwareExtension
 
-cmake -Bcmake -B build -A Win32 -DBUILD_TESTING=OFF
+cmake -B build -A Win32 -DBUILD_TESTING=OFF
 
 # Build
 cmake --build build --config Release

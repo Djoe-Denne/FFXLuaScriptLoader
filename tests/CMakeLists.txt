@@ -1,8 +1,8 @@
-# Application Hook Unit Tests
+# Unit Tests for FFScriptLoader (x32)
 cmake_minimum_required(VERSION 3.25)
-project(AppHook_Tests VERSION 1.0.0 LANGUAGES CXX)
+project(FFScriptLoaderTests VERSION 1.0.0 LANGUAGES CXX)
 
-# Force 32-bit architecture for tests too
+# Force 32-bit architecture
 set(CMAKE_GENERATOR_PLATFORM Win32)
 set(CMAKE_VS_PLATFORM_NAME Win32)
 set(CMAKE_SIZEOF_VOID_P 4)
@@ -21,41 +21,45 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(MSVC)
     add_compile_options(/arch:IA32 /W4)
     add_link_options(/MACHINE:X86)
+    # Disable specific warnings for tests
+    add_compile_options(/wd4996)  # Disable deprecated function warnings
 endif()
 
-# Fetch Google Test from GitHub
+# Download Google Test
 include(FetchContent)
-
 FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG v1.14.0
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG release-1.12.1
 )
 
-# Configure Google Test options
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)  # Use shared runtime for MSVC
-set(BUILD_GMOCK ON CACHE BOOL "" FORCE)
-set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
-
-# Include Google Test's cmake utilities
-include(GoogleTest)
-
-# Dependencies are now handled by core_hook
 
 # Test source files
 set(TEST_SOURCES
-    test_config_base.cpp
-    test_logger.cpp
-    test_hook_task.cpp
+    # Main test runner
+    test_main.cpp
+    
+    # Core hook tests
     test_mod_context.cpp
-    test_copy_memory.cpp
     test_config_factory.cpp
-    main.cpp
+    test_task_manager.cpp
+    test_plugin_manager.cpp
+    test_hook_task.cpp
+    
+    # Memory plugin tests
+    test_memory_region.cpp
+    test_copy_memory.cpp
+    test_patch_memory.cpp
+    test_memory_configs.cpp
+    
+    # Mock implementations
+    mock_plugin_host.cpp
 )
 
-# Create test executable (core_hook provides all functionality)
+# Create test executable
 add_executable(app_hook_tests ${TEST_SOURCES})
 
 # Include directories
@@ -67,7 +71,7 @@ target_include_directories(app_hook_tests PRIVATE
 
 # Link libraries
 target_link_libraries(app_hook_tests PRIVATE
-    core_hook       # Our shared static library
+    core_hook
     gtest
     gtest_main
     gmock
@@ -76,19 +80,20 @@ target_link_libraries(app_hook_tests PRIVATE
     user32
 )
 
-# Compile definitions
+# Definitions
 target_compile_definitions(app_hook_tests PRIVATE
     WIN32_LEAN_AND_MEAN
     NOMINMAX
     GTEST_HAS_STD_WSTRING=1
-    _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
-    _SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS
 )
 
-# Add tests to CTest
+# Discover tests for CTest
+include(GoogleTest)
 gtest_discover_tests(app_hook_tests)
 
-# Copy test data files if any exist
-# file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# Set output directory
+set_target_properties(app_hook_tests PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/tests
+)
 
-message(STATUS "Application Hook tests configured successfully") 
+message(STATUS "Unit tests configured for x32 architecture") 
