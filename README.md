@@ -92,6 +92,17 @@ Extend functionality by hooking into existing routines and expanding data storag
 ### For Educational Purposes
 Study and modify legacy software behavior in a controlled environment.
 
+## Contributing
+
+We welcome contributions to the Legacy Software Extension Framework! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting pull requests.
+
+Key principles for contributors:
+- Use modern C++ 23 standards
+- Respect the existing architecture
+- Include comprehensive tests
+- Provide clear documentation
+- Keep the framework generic - create separate repositories for game-specific plugins
+
 ## License
 
 MIT License - Educational and modding purposes only. 
